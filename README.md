@@ -3,6 +3,29 @@ operations
 
 Chef Cookbook for a single stack operations machine.
 
+## Log Aggregation/Analysis
+* ElasticSearch
+* Logstash
+* Kibana
+* Rsyslog
+* Redis
+* Beaver
+
+## Time Series / Metrics
+* Graphite
+* StatsD
+* Tattle
+* Skyline
+
+## Continuous Integration / Delivery
+* Jenkins
+* Test Kitchen
+
+This cookbook and associated role & metadata are currently tuned for a c3.large with 2 cores and 3.75G of RAM.
+
+In production we are capable of aggregating logs, indexing and serving live analytics for approximately 25,000 Transactions Per Minute of our Web App, which can be anywhere from 3 - 5 log lines per request (NginX, uWSGI, App).
+
+Additionally, approximately 15,000 time series datapoints are aggregated and written ever minute from diamond and statsD calls in the codebase.
 
 Requirements
 ------------
@@ -53,10 +76,10 @@ Requirements
 - [tattle](https://github.com/wayfair/Graphite-Tattle) - alerting for graphite
 - [aws-minions](https://github.com/Jumpshot/aws-minions) - snapshot backups & restores, dynamic dns
 
-
 #### to consider
 - [seyren](https://github.com/scobal/seyren) - better alerting than tattle
-
+- [skyline](https://github.com/etsy/skyline) - anomaly detection
+- [test kitchen](https://github.com/test-kitchen/test-kitchen) - chef continuous integration
 
 Attributes
 ----------
