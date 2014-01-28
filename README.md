@@ -47,15 +47,15 @@ Requirements
 - `recipe[chatbot::init]` - serialization
 
 #### projects
-- `[diamond](https://github.com/BrightcoveOS/Diamond)` - metrics & monitoring
-- `[beaver](https://github.com/josegonzalez/beaver)` - log shipping
-- `[anthracite](https://github.com/Dieterbe/anthracite)` - event annotation for metrics
-- `[tattle](https://github.com/wayfair/Graphite-Tattle)` - alerting for graphite
-- `[aws-minions](https://github.com/Jumpshot/aws-minions)` - snapshot backups & restores, dynamic dns
+- [diamond](https://github.com/BrightcoveOS/Diamond) - metrics & monitoring
+- [beaver](https://github.com/josegonzalez/beaver) - log shipping
+- [anthracite](https://github.com/Dieterbe/anthracite) - event annotation for metrics
+- [tattle](https://github.com/wayfair/Graphite-Tattle) - alerting for graphite
+- [aws-minions](https://github.com/Jumpshot/aws-minions) - snapshot backups & restores, dynamic dns
 
 
 #### to consider
-- `[seyren](https://github.com/scobal/seyren)` - better alerting than tattle
+- [seyren](https://github.com/scobal/seyren) - better alerting than tattle
 
 
 Attributes
