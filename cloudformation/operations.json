@@ -1,0 +1,369 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+
+    "Description" : "Operations",
+
+    "Parameters" : {
+    
+        "ArtifactBucket" : {
+            "Type" : "String",
+            "Description" : "S3 Bucket for Artifacts"
+        },
+    
+        "MessageTopic" : {
+            "Type" : "String",
+            "Description" : "Queue Topic ARN for Message Bus"
+        },
+        
+        "DomainSuffix" : {
+            "Type" : "String",
+            "Description" : "Domain Suffix: domain.com or dev.domain.com"
+        },
+    
+        "VPCID" : {
+            "Type" : "String",
+            "Description" : "VPC-ID"
+        },
+        
+        "ZONEID" : {
+            "Type" : "String",
+            "Description" : "Route53 ZoneID"
+        },
+    
+        "InfraInstanceSize" : {
+            "Default" : "t1.micro",
+            "Type" : "String",
+            "Description" : "Instance Class",
+            "AllowedValues" : [ "t1.micro", "m1.small", "m1.medium", "m1.large", "c3.large", "m3.xlarge" ],
+            "ConstraintDescription" : "must select a valid instance type."
+        },
+        
+        "PrivateRouteTable" : {
+           "Default" : "",
+           "Type" : "String",
+           "Description" : "Private Route Table"
+        },
+        
+        "InfraVolumeSize" : {
+            "Default" : "100",
+            "Type" : "String",
+            "Description" : "Volume size in GB"
+        }
+                
+    },
+
+    "Mappings" : {
+
+        "AWSRegionAvailabilityZones" : {
+          "us-east-1"      : { "1" : "us-east-1a", "2" : "us-east-1d", "3" : "us-east-1c" },
+          "us-west-1"      : { "1" : "us-west-1a", "2" : "us-west-1b", "3" : "us-west-1c" },
+          "us-west-2"      : { "1" : "us-west-2a", "2" : "us-west-2b", "3" : "us-west-2c" }
+        },
+        
+        "AWSRegionArch2AMI" : {
+          "us-east-1"      : { "64" : "ami-83e4bcea" },
+          "us-west-1"      : { "64" : "ami-981f29dd" },
+          "us-west-2"      : { "64" : "ami-be1c848e" }
+        },
+        
+		"AWSRegionArch2Ubuntu" : {
+          "us-east-1"      : { "64" : "ami-a73264ce" }
+        }
+              
+    },
+    
+    "Resources" : {
+
+        "InfraSubnet0" : {
+          "Type" : "AWS::EC2::Subnet",
+          "Properties" : {
+            "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegionAvailabilityZones", { "Ref" : "AWS::Region" }, "1" ]},
+            "VpcId" : { "Ref" : "VPCID" },
+            "CidrBlock" : "10.0.1.96/27",
+            "Tags" : [
+              {"Key" : "Application", "Value" : { "Ref" : "AWS::StackName"} },
+              {"Key" : "Network", "Value" : "Brain" }
+            ]
+          }
+        },
+        
+        "InfraSubnet1" : {
+          "Type" : "AWS::EC2::Subnet",
+          "Properties" : {
+            "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegionAvailabilityZones", { "Ref" : "AWS::Region" }, "2" ]},
+            "VpcId" : { "Ref" : "VPCID" },
+            "CidrBlock" : "10.0.1.128/27",
+            "Tags" : [
+              {"Key" : "Application", "Value" : { "Ref" : "AWS::StackName"} },
+              {"Key" : "Network", "Value" : "Brain" }
+            ]
+          }
+        },
+        
+        "InfraSubnet2" : {
+          "Type" : "AWS::EC2::Subnet",
+          "Properties" : {
+            "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegionAvailabilityZones", { "Ref" : "AWS::Region" }, "3" ]},
+            "VpcId" : { "Ref" : "VPCID" },
+            "CidrBlock" : "10.0.1.160/27",
+            "Tags" : [
+              {"Key" : "Application", "Value" : { "Ref" : "AWS::StackName"} },
+              {"Key" : "Network", "Value" : "Brain" }
+            ]
+          }
+        },
+                
+        "InfraRouteTableAssociation0" : {
+          "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+          "Properties" : {
+            "SubnetId" : { "Ref" : "InfraSubnet0" },
+            "RouteTableId" : { "Ref" : "PrivateRouteTable" }
+          }
+        },
+        
+        "InfraRouteTableAssociation1" : {
+          "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+          "Properties" : {
+            "SubnetId" : { "Ref" : "InfraSubnet1" },
+            "RouteTableId" : { "Ref" : "PrivateRouteTable" }
+          }
+        },
+
+        "InfraRouteTableAssociation2" : {
+          "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+          "Properties" : {
+            "SubnetId" : { "Ref" : "InfraSubnet2" },
+            "RouteTableId" : { "Ref" : "PrivateRouteTable" }
+          }
+        },
+        
+        "LogSecurityGroup" : {
+            "Type" : "AWS::EC2::SecurityGroup",
+            "Properties" : {
+                "VpcId" : { "Ref" : "VPCID" },
+                "GroupDescription" : "LogStash Security Group",
+                "SecurityGroupIngress" : [ 
+                    { "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "0.0.0.0/0" },
+                    { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "10.0.0.0/17" },
+                    { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "10.10.0.0/24" },
+                    { "IpProtocol" : "tcp", "FromPort" : "5544", "ToPort" : "5544", "CidrIp" : "10.0.0.0/17" },
+                    { "IpProtocol" : "udp", "FromPort" : "8125", "ToPort" : "8125", "CidrIp" : "10.0.0.0/17" },
+                    { "IpProtocol" : "tcp", "FromPort" : "9200", "ToPort" : "9200", "CidrIp" : "10.0.0.0/17" },
+                    { "IpProtocol" : "tcp", "FromPort" : "9200", "ToPort" : "9200", "CidrIp" : "10.10.0.0/24" },
+                    { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "10.0.0.0/17" },
+                    { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "10.10.0.0/24" },
+                    { "IpProtocol" : "tcp", "FromPort" : "6379", "ToPort" : "6379", "CidrIp" : "10.0.0.0/17" },
+                    { "IpProtocol" : "udp", "FromPort" : "9999", "ToPort" : "9999", "CidrIp" : "10.0.0.0/17" }
+                ]
+            }
+        },
+        
+        "LogASGServerGroup" : {
+            "UpdatePolicy" : {
+              "AutoScalingRollingUpdate" : {
+                 "MinInstancesInService" : "1",
+                 "MaxBatchSize" : "1"
+              }
+            },
+            "Type" : "AWS::AutoScaling::AutoScalingGroup",
+            "Properties" : {
+                "AvailabilityZones" : [{ "Fn::FindInMap" : [ "AWSRegionAvailabilityZones", { "Ref" : "AWS::Region" }, "1" ]}, { "Fn::FindInMap" : [ "AWSRegionAvailabilityZones", { "Ref" : "AWS::Region" }, "2" ]}, { "Fn::FindInMap" : [ "AWSRegionAvailabilityZones", { "Ref" : "AWS::Region" }, "3" ]}],
+                "VPCZoneIdentifier" : [{ "Ref" : "InfraSubnet0" }, { "Ref" : "InfraSubnet1" }, { "Ref" : "InfraSubnet2" }],
+                "LaunchConfigurationName" : { "Ref" : "InfraLaunchConfig" },
+                "MinSize" : "1",
+                "MaxSize" : "2",
+                "DesiredCapacity" : "1",
+                "NotificationConfiguration" : {
+                    "TopicARN" : { "Ref" : "MessageTopic" },
+                    "NotificationTypes" : ["autoscaling:EC2_INSTANCE_LAUNCH", "autoscaling:EC2_INSTANCE_LAUNCH_ERROR", "autoscaling:EC2_INSTANCE_TERMINATE", "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"]
+                },
+                "Tags" : [ {
+                    "Key" : "Name",
+                    "Value" : "Infrastructure",
+                    "PropagateAtLaunch" : true
+                }]
+            }
+        },
+
+        "InfraAlarmStatusCheckFailed": {
+            "Type": "AWS::CloudWatch::Alarm",
+            "Properties": {
+                "AlarmDescription": "Status Check Failed",
+                "MetricName": "StatusCheckFailed",
+                "Namespace": "AWS/EC2",
+                "Statistic": "Maximum",
+                "Period": "300",
+                "EvaluationPeriods": "1",
+                "Threshold": "1",
+                "AlarmActions": [ { "Ref" : "MessageTopic" } ],
+                "Dimensions": [
+                  {
+                    "Name": "AutoScalingGroupName",
+                    "Value": { "Ref": "LogASGServerGroup" }
+                  }
+                ],
+                "ComparisonOperator": "GreaterThanOrEqualToThreshold"
+            }
+        },
+        
+        "InfraPolicy": {
+            "Type" : "AWS::IAM::Policy",
+            "Properties" : {
+                "Roles": [{"Ref": "InfraRole"}],
+                "PolicyName": "InfraPolicy",
+                "PolicyDocument": { 
+                    "Statement":[
+                        {
+                            "Effect":"Allow",
+                            "Action":"cloudformation:DescribeStackResource",
+                            "Resource":"*"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:Describe*",
+                                "ec2:CreateSnapshot",
+                                "ec2:CreateTags",
+                                "sqs:SendMessage",
+                                "ec2:DeleteSnapshot",
+                                "route53:*",
+                                "ec2:CreateVolume",
+                                "ec2:AttachVolume",
+                                "cloudwatch:PutMetricData"
+                            ],
+                            "Resource": "*"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:Get*",
+                                "s3:List*"
+                            ],
+                            "Resource": [
+                                { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ArtifactBucket" }]]},
+                                { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ArtifactBucket" }, "/*" ]]}
+                            ]
+                        }
+                    ]
+                }
+            }
+            
+        },
+
+       "InfraRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [{
+                        "Effect": "Allow",
+                        "Principal": {"Service": ["ec2.amazonaws.com"]},
+                        "Action": ["sts:AssumeRole"]
+                    }]},
+                "Path": "/"
+            }
+        },
+        
+        "InfraProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [{ "Ref": "InfraRole" }]}
+        },
+        
+        "InfraLaunchConfig" : {
+            "Type" : "AWS::AutoScaling::LaunchConfiguration",
+            "Metadata" : {
+            	"AWS::CloudFormation::Authentication":{
+					"S3AccessCreds":{
+						"type":"S3",
+						"roleName":{
+							"Ref":"InfraRole"
+						}
+					}
+				},
+                "AWS::CloudFormation::Init" : {
+                    "config" : {
+                        "files" : {
+	                        "/etc/chef/chef-validator.pem" : {
+	                           "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/chef-validator.pem"]]},
+	                           "mode" : "000644",
+	                           "owner" : "root",
+	                           "group" : "root",
+	                           "authentication" : "S3AccessCreds"
+	                        },
+	                        "/etc/chef/client.rb" : {
+	                           "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/client.rb"]]},
+	                           "mode" : "000644",
+	                           "owner" : "root",
+	                           "group" : "root",
+	                           "authentication" : "S3AccessCreds"
+	                        },
+	                        "/etc/chef/.secret" : {
+	                           "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/encrypted_data_bag_secret"]]},
+	                           "mode" : "000600",
+	                           "owner" : "root",
+	                           "group" : "root",
+	                           "authentication" : "S3AccessCreds"
+	                        },
+	                        "/usr/bin/set_dns" : {
+	                           "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/set_dns.py"]]},
+	                           "mode" : "000777",
+	                           "owner" : "root",
+	                           "group" : "root",
+	                           "authentication" : "S3AccessCreds"
+	                        },
+	                        "/usr/bin/restore_backup" : {
+	                           "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/restore_backup.py"]]},
+	                           "mode" : "000777",
+	                           "owner" : "root",
+	                           "group" : "root",
+	                           "authentication" : "S3AccessCreds"
+	                        },
+	                        "/usr/bin/snapshot_backup" : {
+	                           "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/snapshot_backup.py"]]},
+	                           "mode" : "000777",
+	                           "owner" : "root",
+	                           "group" : "root",
+	                           "authentication" : "S3AccessCreds"
+	                        }
+                        }
+                    }
+                }
+            },
+            "Properties" : {
+                "KeyName" : "infrastructure",
+                "IamInstanceProfile" : {"Fn::GetAtt" : ["InfraProfile", "Arn"] },
+                "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" }, "64" ]},
+                "SecurityGroups" : [ { "Ref" : "LogSecurityGroup" } ],
+                "InstanceType" : { "Ref" : "InfraInstanceSize" },
+                "InstanceMonitoring" : "false",
+                "UserData": {
+                    "Fn::Base64" : { "Fn::Join" : ["", [
+                            "#!/bin/bash\n",                         
+                            "rm -f /etc/update-motd.d/70-available-updates\n",
+                            "yum-config-manager --enable epel\n",
+                            "yum install -y git xfsprogs aws-cfn-bootstrap aws-apitools-common aws-apitools-ec2 python-pip\n",
+                            "/opt/aws/bin/cfn-init -s ", { "Ref" : "AWS::StackName" }, " -r InfraLaunchConfig --region ", { "Ref" : "AWS::Region" }, "\n",
+                            "pip install httplib2\n",
+                            "python /usr/bin/set_dns ", { "Ref" : "ZONEID" }, " operations.internal.", { "Ref" : "DomainSuffix" }, " 300\n",
+                            "python /usr/bin/restore_backup Name infrastructure sdh1 ", { "Ref" : "InfraVolumeSize" }, " \"mkfs.xfs -f /dev/sdh1\"\n",
+                            "echo /dev/sdh1 /opt xfs rw,noatime,nodiratime 0 0 >> /etc/fstab\n",
+                            "rm -rf /opt;mkdir /opt;mount /opt\n",
+                            "curl -L https://www.opscode.com/chef/install.sh | bash\n",
+                            "OPSCODE_USER='operations' chef-client -o 'role[operations]' >> /var/log/chef-client.log\n",
+                            "python /usr/bin/snapshot_backup Name infrastructure 72 /opt sdh1 \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
+                          ]]
+                    }
+                }
+            }
+        }
+        
+    },
+
+    "Outputs" : {
+    
+        
+
+    }
+    
+}

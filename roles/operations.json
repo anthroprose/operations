@@ -1,0 +1,146 @@
+{
+	"name": "operations",
+	"description": "The base role for the Operations Machine",
+	"instance_role": "operations",
+	"json_class": "Chef::Role",
+	"run_list": [
+		"recipe[yum]",
+		"recipe[user]",
+		"recipe[cron]",
+		"recipe[rsyslog::client]",
+		"recipe[git]",
+		"recipe[chef-solo-search]",
+		"recipe[graphite]",
+		"recipe[sudo]",
+		"recipe[redis]",
+		"recipe[java]",
+		"recipe[postfix]",
+		"recipe[mysql::server]",
+		"recipe[logstash::server]",
+		"recipe[statsd]",
+		"recipe[elasticsearch]",
+		"recipe[nginx]",
+		"recipe[kibana]",
+		"recipe[jenkins::server]",
+		"recipe[operations]",
+		"recipe[operations::infrastructure]",
+		"recipe[chatbot]",
+		"recipe[chatbot::init]"
+	],
+	"override_attributes" : {
+        "apache" : {
+            "listen_ports" : [ "8080" ]
+        },
+        "graphite" : {
+            "listen_port" : "8080",
+            "graphite_web" : { 
+                "bitmap_support" : false
+            } 
+        },
+        "kibana" : {
+            "webserver_hostname" : "kibana.internal.operations.com",
+            "webserver_listen" : "*"
+        },
+        "elasticsearch" : {
+            "allocated_memory" : "512m",
+            "version" : "0.90.7",
+            "path" : {
+            	"data" : "/opt/elasticsearch/data",
+            	"work" : "/opt/elasticsearch/work",
+            	"logs" : "/opt/elasticsearch/logs"
+            }
+        },
+        "mysql" : {
+        	"server_root_password" : "",
+        	"server_debian_password" : "",
+        	"server_repl_password" : ""
+        },
+		"jenkins" : { 
+        	"server" : { 
+        		"port" : "8089",
+        		"home" : "/opt/jenkins",
+        		"url" : "http://jenkins.internal.operations.com"
+        	} 
+        }
+	},
+	"default_attributes" : {
+		"role" : "operations",
+		"dependencies" : [
+			"htop",
+			"memcached",
+			"fuse",
+			"rubygems",
+			"ruby-devel",
+			"redis",
+			"python",
+			"python-devel",
+			"python-pip",
+			"git",
+			"numpy",
+			"scipy"
+		],
+		"rsyslog" : {
+            "server_ip" : "syslog.internal.operations.com",
+            "port" : "5544"
+		},
+		"logstash" : {
+            "server" : {
+                "base_config_cookbook" : "operations",
+                "install_rabbitmq" : false,
+				"xmx" : "256M",
+				"xms" : "256M"
+            }
+		},
+		"statsd" : {
+			"delete_idle_stats" : true,
+			"delete_timers" : true,
+			"delete_gauges" : true,
+			"delete_sets" : true,
+			"delete_counters" : true,
+			"flush_interval" : "1000"
+		},
+		"nginx" : {
+			"default_domain" : "localhost",
+			"default_site_enabled" : false,
+	        "ssl" : {
+	            "city" : "Austin",
+	            "state" : "TX",
+	            "country" : "US"
+	        },
+			"sites" : {
+				"proxy" : [
+					{ "domain":"graphite.internal.operations.com", "directory":"/opt/graphite/webapp/content/", "proxy_location" : "http://localhost:8080" },
+					{ "domain":"anthracite.internal.operations.com", "directory":"/opt/anthracite/", "proxy_location" : "http://localhost:8081" },
+					{ "domain":"tattle.internal.operations.com", "directory":"/opt/tattle/", "proxy_location" : "http://localhost:8082" },
+					{ "domain":"skyline.internal.operations.com", "directory":"/opt/skyline/", "proxy_location" : "http://localhost:1500" },
+				 	{ "domain":"jenkins.internal.operations.com", "directory":"/opt/jenkins/", "proxy_location" : "http://localhost:8089" }
+				]
+			}
+		},
+		"authorization" : {
+			"sudo" : {
+				"passwordless" : true,
+				"users" : ["ec2-user", "jumpshot"]
+			}
+	    },
+	    "tattle" : {
+	    	"listen_port" : "8082",
+	    	"url" : "tattle.internal.operations.com",
+	    	"admin_email" : "corley@avast.com",
+	    	"doc_root" : "/opt/tattle"
+	    	
+	    },
+		"chatbot" : {
+			"rooms" : ["", ""],
+			"username" : "",
+			"password" : "",
+			"nickname" : "",
+			"api_key" : ""	
+		},
+		"postfix" : {
+			"main" : {
+				"smtpd_use_tls" : false
+			}
+		}
+	}
+}
