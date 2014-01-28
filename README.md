@@ -87,7 +87,7 @@ Requirements
 - [seyren](https://github.com/scobal/seyren) - better alerting than tattle
 - [skyline](https://github.com/etsy/skyline) - anomaly detection
 - [test kitchen](https://github.com/test-kitchen/test-kitchen) - chef continuous integration
-
+- [revily](https://github.com/revily/revily) - On-call scheduling and incident response
 Attributes
 ----------
 
