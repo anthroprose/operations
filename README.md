@@ -21,11 +21,11 @@ Chef Cookbook for a single stack operations machine.
 * Jenkins
 * Test Kitchen
 
-This cookbook and associated role & metadata are currently tuned for a c3.large with 2 cores and 3.75G of RAM.
+Included is a cloudformation template which will setup a 1:1 Min/Max ASG for garunteeing uptime of the instance. All data is stored under /opt which is an EBS Mountpoint in AWS. Snapshots are taken every hour and on boot/reboot the machine checks for old snapshots to mount under /opt instead of re-installing or re-creating the drive.  At most you may loose up to 1 hour of data with this setup, small gaps in graphs. 
 
-In production we are capable of aggregating logs, indexing and serving live analytics for approximately 25,000 Transactions Per Minute of our Web App, which can be anywhere from 3 - 5 log lines per request (NginX, uWSGI, App).
+This cookbook and associated role & metadata are currently tuned for a c3.large with 2 cores and 3.75G of RAM. In production we are capable of aggregating logs, indexing and serving live analytics for approximately 25,000 Transactions Per Minute of our Web App, which can be anywhere from 3 - 5 log lines per request (NginX, uWSGI, App). Additionally, approximately 15,000 time series datapoints are aggregated and written every minute from diamond and statsD calls in the codebase.
 
-Additionally, approximately 15,000 time series datapoints are aggregated and written ever minute from diamond and statsD calls in the codebase.
+--------------------------------------------------------------------------------------
 
 Requirements
 ------------
@@ -46,6 +46,13 @@ Requirements
 - `patsy` - statistical models
 - `statsmodels` - statistical models
 - `msgpack_python` - serialization
+- `boto` - api calls
+- `httplib2` - need to deprecate this for 100% boto
+
+#### rubygems
+- `chef-zero` - mock all the things
+- `test-kitchen` - test all the things
+- `kitchen-ec2` - test all the things in the cloud
 
 #### chef cookbooks
 - `recipe[yum]` - packages
@@ -66,8 +73,8 @@ Requirements
 - `recipe[nginx]` - http(s)
 - `recipe[kibana]` - log aggregation visualization
 - `recipe[jenkins::server]` - continuous integration/delivery
-- `recipe[chatbot]` - serialization
-- `recipe[chatbot::init]` - serialization
+- `recipe[chatbot]` - hipchat v2 api bot
+- `recipe[chatbot::init]` - init.d for bot
 
 #### projects
 - [diamond](https://github.com/BrightcoveOS/Diamond) - metrics & monitoring

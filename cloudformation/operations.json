@@ -305,26 +305,23 @@
 	                           "group" : "root",
 	                           "authentication" : "S3AccessCreds"
 	                        },
-	                        "/usr/bin/set_dns" : {
-	                           "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/set_dns.py"]]},
+	                        "/usr/bin/route53-entry" : {
+	                           "source" : "https://raw.github.com/Jumpshot/aws-minions/master/route53-entry.py",
 	                           "mode" : "000777",
 	                           "owner" : "root",
-	                           "group" : "root",
-	                           "authentication" : "S3AccessCreds"
+	                           "group" : "root"
 	                        },
-	                        "/usr/bin/restore_backup" : {
-	                           "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/restore_backup.py"]]},
+	                        "/usr/bin/snapshot-restore" : {
+	                           "source" : "https://raw.github.com/Jumpshot/aws-minions/master/snapshot-restore.py",
 	                           "mode" : "000777",
 	                           "owner" : "root",
-	                           "group" : "root",
-	                           "authentication" : "S3AccessCreds"
+	                           "group" : "root"
 	                        },
-	                        "/usr/bin/snapshot_backup" : {
-	                           "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/snapshot_backup.py"]]},
+	                        "/usr/bin/snapshot-create" : {
+	                           "source" : "https://raw.github.com/Jumpshot/aws-minions/master/snapshot-create.py",
 	                           "mode" : "000777",
 	                           "owner" : "root",
-	                           "group" : "root",
-	                           "authentication" : "S3AccessCreds"
+	                           "group" : "root"
 	                        }
                         }
                     }
@@ -345,13 +342,13 @@
                             "yum install -y git xfsprogs aws-cfn-bootstrap aws-apitools-common aws-apitools-ec2 python-pip\n",
                             "/opt/aws/bin/cfn-init -s ", { "Ref" : "AWS::StackName" }, " -r InfraLaunchConfig --region ", { "Ref" : "AWS::Region" }, "\n",
                             "pip install httplib2\n",
-                            "python /usr/bin/set_dns ", { "Ref" : "ZONEID" }, " operations.internal.", { "Ref" : "DomainSuffix" }, " 300\n",
-                            "python /usr/bin/restore_backup Name infrastructure sdh1 ", { "Ref" : "InfraVolumeSize" }, " \"mkfs.xfs -f /dev/sdh1\"\n",
+                            "python /usr/bin/route53-entry ", { "Ref" : "ZONEID" }, " operations.internal.", { "Ref" : "DomainSuffix" }, " 300\n",
+                            "python /usr/bin/snapshot-restore Name infrastructure sdh1 ", { "Ref" : "InfraVolumeSize" }, " \"mkfs.xfs -f /dev/sdh1\"\n",
                             "echo /dev/sdh1 /opt xfs rw,noatime,nodiratime 0 0 >> /etc/fstab\n",
                             "rm -rf /opt;mkdir /opt;mount /opt\n",
                             "curl -L https://www.opscode.com/chef/install.sh | bash\n",
                             "OPSCODE_USER='operations' chef-client -o 'role[operations]' >> /var/log/chef-client.log\n",
-                            "python /usr/bin/snapshot_backup Name infrastructure 72 /opt sdh1 \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
+                            "python /usr/bin/snapshot-create Name infrastructure 72 /opt sdh1 \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
                           ]]
                     }
                 }

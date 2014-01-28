@@ -54,7 +54,7 @@ apache_site 'tattle'
 cron_d 'snapshot-backup' do
   minute  0
   hour    "*"
-  command 'python /usr/bin/snapshot_backup Name infrastructure 72 /opt sdh1 "/usr/sbin/xfs_freeze -f" "/usr/sbin/xfs_freeze -u"'
+  command 'python /usr/bin/snapshot-create Name infrastructure 72 /opt sdh1 "/usr/sbin/xfs_freeze -f" "/usr/sbin/xfs_freeze -u"'
   user    'root'
 end
 
