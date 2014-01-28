@@ -1,0 +1,36 @@
+input {
+  
+  syslog {
+    type => syslog
+    port => 5544
+  }
+  
+  redis {
+  	
+    host => "127.0.0.1"
+    data_type => 'list'
+    key => 'logstash:beaver'
+    
+  }
+
+}
+
+filter {
+	if [type] == "nginx" {
+		grok {
+			match => ["message", "%{IPORHOST:clientip} (?:%{USER:auth}|-) (?:%{USER:ident}|-) \[%{HTTPDATE:timestamp}\] \"(?:%{WORD:verb} %{NOTSPACE:request}(?: HTTP/%{NUMBER:httpversion})?|%{DATA:rawrequest})\" %{NUMBER:response} (?:%{NUMBER:bytes}|-) \"(?:%{QS:referrer}|-)\" %{QS:agent} \"%{IPORHOST:loadbalancer}\""]
+		}
+
+		geoip {
+			source => "clientip"
+		}
+	}
+}
+
+output {
+  
+	elasticsearch {
+		host => "127.0.0.1"
+	}
+  
+}

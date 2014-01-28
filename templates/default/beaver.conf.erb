@@ -1,0 +1,17 @@
+[beaver]
+format: json
+transport: redis
+redis_url: redis://syslog.internal.jumpshot.com:6379/0
+redis_namespace: logstash:beaver
+
+[/var/log/nginx/*.log]
+type: nginx
+tags: nginx,server
+
+[/var/log/uwsgi/daemon.log]
+type: uwsgi
+tags: uwsgi,server
+
+[/var/log/audit/audit.log]
+type: audit
+tags: audit,server
