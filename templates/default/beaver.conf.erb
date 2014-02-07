@@ -1,7 +1,7 @@
 [beaver]
-format: json
+logstash_version: 1
 transport: redis
-redis_url: redis://syslog.internal.jumpshot.com:6379/0
+redis_url: redis://<%= node['syslog']['server_ip'] %>:6379/0
 redis_namespace: logstash:beaver
 
 [/var/log/nginx/*.log]
