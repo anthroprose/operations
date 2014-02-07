@@ -49,7 +49,7 @@ script "install-beaver" do
   group "root"
   cwd "/tmp"
   code <<-EOH
-    pip install beaver==30
+    pip install beaver==31
     mkdir -p /etc/beaver
   EOH
 end
