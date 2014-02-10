@@ -3,9 +3,13 @@ operations
 
 Chef Cookbook for a single stack operations machine.
 
-This cookbook and associated role & metadata are currently tuned for a c3.large with 2 cores and 3.75G of RAM. In production we are capable of aggregating logs, indexing and serving live analytics for approximately 25,000 Transactions Per Minute of our Web App, which can be anywhere from 3 - 5 log lines per request (NginX, uWSGI, App). Additionally, approximately 15,000 time series datapoints are aggregated and written every minute from diamond and statsD calls in the codebase.
+This cookbook and associated role & metadata are currently tuned for a (we started with a c3.large with 2 cores and 3.75G of RAM) are are now using a m3.xlarge with 4cores and 15G of RAM (ElasticSearch some extra headroom to cover large log bursts of the half mill per minute variety and statsD with node eats CPU). In production we are capable of aggregating logs, indexing and serving live analytics for approximately 40,000 Transactions Per Minute of our Web App, which can be anywhere from 3 - 6 log lines per request (NginX, uWSGI, App) (anywhere from 250,000 to 500,000 loglines per minute at peak!). Additionally, and approximately 5,000,000 (yeah, thats Millions) time series datapoints are aggregated and written every minute from diamond and statsD calls in the codebase.
+
+No special tuning has occured, and we are using standard EBS, no PIOPs or kernel settings at this point. We're thinking about switching to https://github.com/armon/statsite or https://github.com/bitly/statsdaemon for a less CPU intensive statsD daemon (it currently uses more CPU than ElasticSearch, Carbon or Logstash).
 
 Included is a cloudformation template which will setup a 1:1 Min/Max ASG for garunteeing uptime of the instance. All data is stored under /opt which is an EBS Mountpoint in AWS. Snapshots are taken every hour and on boot/reboot the machine checks for old snapshots to mount under /opt instead of re-installing or re-creating the drive.  At most you may loose up to 1 hour of data with this setup, small gaps in graphs. 
+
+The Vagrantfile is not complete, but the CF Template and Chef Role are currently being used in Production. Please use github issues for any problems or feature requests.
 
 ## Log Aggregation/Analysis
 * ElasticSearch
@@ -19,11 +23,11 @@ Included is a cloudformation template which will setup a 1:1 Min/Max ASG for gar
 * Graphite
 * StatsD
 * Tattle
-* Skyline
+* Skyline (In Progress)
 
 ## Continuous Integration / Delivery
 * Jenkins
-* Test Kitchen
+* Test Kitchen (In Progress)
 
 --------------------------------------------------------------------------------------
 
@@ -37,7 +41,7 @@ Requirements
 - `numpy` - for crunching stats
 
 #### pip packages
-- `beaver==30` - This should really be 31, but its better than running master from github currently
+- `beaver==31` - Log shipping
 - `flask` - lightweight web framework
 - `grequests` - gevent async http
 - `scikits.statsmodels` - stats
@@ -47,7 +51,6 @@ Requirements
 - `statsmodels` - statistical models
 - `msgpack_python` - serialization
 - `boto` - api calls
-- `httplib2` - need to deprecate this for 100% boto
 
 #### rubygems
 - `chef-zero` - mock all the things
@@ -88,9 +91,9 @@ Requirements
 - [skyline](https://github.com/etsy/skyline) - anomaly detection
 - [test kitchen](https://github.com/test-kitchen/test-kitchen) - chef continuous integration
 - [revily](https://github.com/revily/revily) - On-call scheduling and incident response
+
 Attributes
 ----------
-
 #### operations::default
 <table>
   <tr>
@@ -385,11 +388,22 @@ Attributes
 </table>
 
 Usage
------
-#### opstest::default
-TODO: Write usage instructions for each cookbook.
+----------
+#### operations::default
+Some attributes *must* be overriden, not defaulted. Check the role json, we use this because of setting and over-riding attributes across a large number of cookbooks.
 
-Some attributes *must* be overriden, not defaulted. Check the role json.
+Features
+----------
+#### operations::default
+
+* If using AWS, it self-snapshots the /opt mounted EBS once an hour by freezing the XFS filesystem, snapshotting and then thawing the drive.
+* If using AWS, it uses UserData to check for previous snapshots and loads the latest one instead of creating a new /opt mount (bounce-back servers! you loose up to 1 hour of data/gaps in graphs with this)
+* Log Aggregation/Indexing/Querying for your entire Infrastructure
+* Time Series data collection and graphing
+* Event annotation for tracking operation events such as deploys/downtime along with graphs
+* Alerting for Time Series Data
+* Jenkins for reporting on timed/cron'd operational tasks or actually used for continuous integration/delivery
+ 
 
 Contributing
 ------------

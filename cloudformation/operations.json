@@ -143,7 +143,7 @@
                 "VpcId" : { "Ref" : "VPCID" },
                 "GroupDescription" : "LogStash Security Group",
                 "SecurityGroupIngress" : [ 
-                    { "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "0.0.0.0/0" },
+                    { "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "10.0.0.0/17" },
                     { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "10.0.0.0/17" },
                     { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "10.10.0.0/24" },
                     { "IpProtocol" : "tcp", "FromPort" : "5544", "ToPort" : "5544", "CidrIp" : "10.0.0.0/17" },
