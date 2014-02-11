@@ -1,3 +1,8 @@
+node['operations']['infrastructure']['packages'].each do |p|
+  Chef::Log.info "Downloading and Installing Dependency: #{p}"
+  package p
+end
+
 Array(node['nginx']['sites']['proxy']).each do |u|
 
   Chef::Log.info "Generating site configuration for: " << u['domain']

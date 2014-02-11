@@ -17,7 +17,7 @@ interval = 60
 path_prefix = <%= node["diamond"]["prefix"] %>
 
 [[StatsdHandler]]
-host = <%= node['syslog']['server_ip'] %>
+host = <%= node['rsyslog']['server_ip'] %>
 port = 8125
 
 [collectors]

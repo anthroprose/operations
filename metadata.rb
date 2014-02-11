@@ -5,12 +5,16 @@ maintainer_email 'corley@avast.com'
 license          'GPLv2'
 description      'Installs/Configures a Single Stack Operations Machine'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          '0.1.0'
+version          '0.1.1'
+recipe           'operations', 'Installs everything for shipping metrics & logs.'
+recipe           'operations::infrastructure', 'Installs/Configures the Log Aggregating/Indexing/Querying Machine'
 
-%w{ centos }.each do |os|
+%w{ amazon centos fedora redhat scientific }.each do |os|
   supports os
 end
 
-%w{ yum user cron rsyslog git graphite sudo redis java postfix mysql logstash statsd elasticsearch nginx kibana jenkins chatbot }.each do |cb|
+%w{ user yum yum-epel cron rsyslog git graphite sudo redis java postfix mysql statsd elasticsearch nginx kibana logstash chatbot }.each do |cb|
   depends cb
 end
+
+depends 'jenkins', '=1.2.2'

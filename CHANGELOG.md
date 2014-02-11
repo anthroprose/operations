@@ -3,9 +3,13 @@ operations CHANGELOG
 
 This file is used to list changes made in each version of the operations cookbook.
 
+0.1.1
+-----
+- [anthroprose] - Working Vagrantfile, better documentation, seperated basic metric/log shipping dependencies from everything else
+
 0.1.0
 -----
-- [your_name] - Initial release of operations
+- [anthroprose] - Initial release of operations
 
 - - -
 Check the [Markdown Syntax Guide](http://daringfireball.net/projects/markdown/syntax) for help with Markdown.

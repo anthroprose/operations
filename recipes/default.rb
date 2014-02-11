@@ -1,21 +1,18 @@
 # You can run this Recipe on any of your nodes to add in a system account with all your ops guys public ssh keys and get logs & metrics flowing off box.
-
-Array(node['dependencies']).each do |p|
-  
-  Chef::Log.info "Downloading and Installing Dependency: #{p}"
-  
-  package p do
-    action :install
-  end
-  
+node['operations']['packages'].each do |p|
+  package p
 end
 
-user_account node["operations"]["user"] do
+node['operations']['pip_packages'].each do |pp|
+  python_pip pp
+end
+
+user_account node['operations']['user'] do
   comment       'Administrative User'
   ssh_keygen    true
-  home          '/home/#{node["operations"]["user"]}'
+  home          "/home/#{node['operations']['user']}"
   manage_home   true
-  ssh_keys node["operations"]["ssh_keys"]
+  ssh_keys node['operations']['ssh_keys']
 end
 
 script "install-diamond" do
@@ -44,20 +41,8 @@ template "/etc/diamond/diamond.conf" do
   notifies :run, "execute[restart-diamond-config]", :immediately
 end
 
-script "install-beaver" do
-  not_if { File.exists?("/etc/beaver/beaver.conf") }
-  interpreter "bash"
-  user "root"
-  group "root"
-  cwd "/tmp"
-  code <<-EOH
-    pip install beaver==31
-    mkdir -p /etc/beaver
-  EOH
-end
-
 execute "restart-beaver-config" do
-  command "killall -9 beaver;beaver -c /etc/beaver/beaver.conf -D -P /var/run/beaver.pid -F json"
+  command "killall -9 beaver;beaver -c /etc/beaver/beaver.conf -D -P /var/run/beaver.pid"
   action :nothing
 end
 

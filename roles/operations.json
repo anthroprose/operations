@@ -5,23 +5,22 @@
 	"json_class": "Chef::Role",
 	"run_list": [
 		"recipe[yum]",
+		"recipe[yum-epel]",
 		"recipe[user]",
 		"recipe[cron]",
 		"recipe[rsyslog::client]",
 		"recipe[git]",
-		"recipe[chef-solo-search]",
 		"recipe[graphite]",
 		"recipe[sudo]",
 		"recipe[redis]",
 		"recipe[java]",
 		"recipe[postfix]",
 		"recipe[mysql::server]",
-		"recipe[logstash::server]",
-		"recipe[statsd]",
-		"recipe[elasticsearch]",
 		"recipe[nginx]",
+		"recipe[elasticsearch]",
+		"recipe[statsd]",
 		"recipe[kibana]",
-		"recipe[jenkins::server]",
+		"recipe[logstash::server]",
 		"recipe[operations]",
 		"recipe[operations::infrastructure]",
 		"recipe[chatbot]",
@@ -51,9 +50,9 @@
             }
         },
         "mysql" : {
-        	"server_root_password" : "",
-        	"server_debian_password" : "",
-        	"server_repl_password" : ""
+        	"server_root_password" : "xxx",
+        	"server_debian_password" : "xxx",
+        	"server_repl_password" : "xxx"
         },
 		"jenkins" : { 
         	"server" : { 
@@ -65,24 +64,9 @@
 	},
 	"default_attributes" : {
 		"role" : "operations",
-		"dependencies" : [
-			"htop",
-			"memcached",
-			"fuse",
-			"rubygems",
-			"ruby-devel",
-			"redis",
-			"python",
-			"python-devel",
-			"python-pip",
-			"git",
-			"numpy",
-			"scipy",
-			"libxml2-devel",
-			"libxslt-devel",
-			"ruby19",
-			"ruby19-devel"
-		],
+		"diamond" : {
+			"prefix" : "operations"
+		},
 		"rsyslog" : {
             "server_ip" : "syslog.internal.operations.com",
             "port" : "5544"
@@ -90,11 +74,15 @@
 		"logstash" : {
             "server" : {
                 "base_config_cookbook" : "operations",
-                "install_rabbitmq" : false,
 				"xmx" : "512M",
 				"xms" : "512M",
-				"source_file" : https://download.elasticsearch.org/logstash/logstash/logstash-1.3.3-flatjar.jar
+				"source_file" : "https://download.elasticsearch.org/logstash/logstash/logstash-1.3.3-flatjar.jar",
+				"version" : "1.3.3",
+				"graphite_ip" : "graphite.internal.operations.com"
             }
+		},
+		"graphite" : {
+			"version" : "0.9.12"
 		},
 		"statsd" : {
 			"delete_idle_stats" : true,
@@ -125,13 +113,13 @@
 		"authorization" : {
 			"sudo" : {
 				"passwordless" : true,
-				"users" : ["ec2-user", "jumpshot"]
+				"users" : ["ec2-user", "operations"]
 			}
 	    },
 	    "tattle" : {
 	    	"listen_port" : "8082",
 	    	"url" : "tattle.internal.operations.com",
-	    	"admin_email" : "corley@avast.com",
+	    	"admin_email" : "ops@operations.com",
 	    	"doc_root" : "/opt/tattle"
 	    	
 	    },

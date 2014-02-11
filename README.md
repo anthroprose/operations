@@ -11,7 +11,7 @@ Included is a cloudformation template which will setup a 1:1 Min/Max ASG for gar
 
 The Vagrantfile is not complete, but the CF Template and Chef Role are currently being used in Production. Please use github issues for any problems or feature requests.
 
-## Log Aggregation/Analysis
+# Log Aggregation/Analysis
 * ElasticSearch
 * Logstash
 * Kibana
@@ -19,15 +19,27 @@ The Vagrantfile is not complete, but the CF Template and Chef Role are currently
 * Redis
 * Beaver
 
-## Time Series / Metrics
+# Time Series / Metrics
 * Graphite
 * StatsD
-* Tattle
+* Tattle (probably going to replace with seyren)
 * Skyline (In Progress)
 
-## Continuous Integration / Delivery
+# Continuous Integration / Delivery
 * Jenkins
 * Test Kitchen (In Progress)
+
+--------------------------------------------------------------------------------------
+
+## Changelog
+
+* Read the [Changelog](CHANGELOG.md)
+
+## Vagrant
+* Read the [Vagrant](VAGRANT.md) Readme
+
+## AWS
+* Coming soon
 
 --------------------------------------------------------------------------------------
 
@@ -142,13 +154,13 @@ Attributes
     <td><tt>['logstash']['server']['xmx']</tt></td>
     <td>String</td>
     <td>java max ram</td>
-    <td><tt>256M</tt></td>
+    <td><tt>512M</tt></td>
   </tr>
   <tr>
     <td><tt>['logstash']['server']['xms']</tt></td>
     <td>String</td>
     <td>java min ram</td>
-    <td><tt>256M</tt></td>
+    <td><tt>512M</tt></td>
   </tr>
   <tr>
     <td><tt>['statsd']['delete_idle_stats']</tt></td>
@@ -311,7 +323,7 @@ Attributes
     <td><tt>['kibana']['webserver_hostname']</tt></td>
     <td>String</td>
     <td>hostname for kibana</td>
-    <td><tt>kibana.internal.jumpshot.com</tt></td>
+    <td><tt>kibana.internal.operations.com</tt></td>
   </tr>
   <tr>
     <td><tt>['kibana']['webserver_listen']</tt></td>
@@ -323,13 +335,13 @@ Attributes
     <td><tt>['elasticsearch']['allocated_memory']</tt></td>
     <td>String</td>
     <td>ram for elasticsearch</td>
-    <td><tt>512m</tt></td>
+    <td><tt>2048m</tt></td>
   </tr>
   <tr>
     <td><tt>['elasticsearch']['version']</tt></td>
     <td>String</td>
     <td>version to install</td>
-    <td><tt>0.90.7</tt></td>
+    <td><tt>0.90.11</tt></td>
   </tr>
   <tr>
     <td><tt>['elasticsearch']['path']['data']</tt></td>
@@ -387,15 +399,15 @@ Attributes
   </tr>
 </table>
 
-Usage
-----------
-#### operations::default
-Some attributes *must* be overriden, not defaulted. Check the role json, we use this because of setting and over-riding attributes across a large number of cookbooks.
-
-Features
+Features/Usage
 ----------
 #### operations::default
 
+* Include this on any node for all of the pre-reqs for log and metrics shipping
+* Just set: ```"rsyslog" => { "server_ip" => "syslog.internal.operations.com", "port" => "5544" }```
+
+#### operations::infrastructure
+* Some attributes *must* be overriden, not defaulted. Check the role json, we use this because of setting and over-riding attributes across a large number of cookbooks.
 * If using AWS, it self-snapshots the /opt mounted EBS once an hour by freezing the XFS filesystem, snapshotting and then thawing the drive.
 * If using AWS, it uses UserData to check for previous snapshots and loads the latest one instead of creating a new /opt mount (bounce-back servers! you loose up to 1 hour of data/gaps in graphs with this)
 * Log Aggregation/Indexing/Querying for your entire Infrastructure
@@ -403,7 +415,6 @@ Features
 * Event annotation for tracking operation events such as deploys/downtime along with graphs
 * Alerting for Time Series Data
 * Jenkins for reporting on timed/cron'd operational tasks or actually used for continuous integration/delivery
- 
 
 Contributing
 ------------

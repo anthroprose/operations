@@ -1,7 +1,7 @@
 [beaver]
 logstash_version: 1
 transport: redis
-redis_url: redis://<%= node['syslog']['server_ip'] %>:6379/0
+redis_url: redis://<%= node['rsyslog']['server_ip'] %>:6379/0
 redis_namespace: logstash:beaver
 
 [/var/log/nginx/*.log]
