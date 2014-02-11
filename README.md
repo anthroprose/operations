@@ -9,8 +9,6 @@ No special tuning has occured, and we are using standard EBS, no PIOPs or kernel
 
 Included is a cloudformation template which will setup a 1:1 Min/Max ASG for garunteeing uptime of the instance. All data is stored under /opt which is an EBS Mountpoint in AWS. Snapshots are taken every hour and on boot/reboot the machine checks for old snapshots to mount under /opt instead of re-installing or re-creating the drive.  At most you may loose up to 1 hour of data with this setup, small gaps in graphs. 
 
-The Vagrantfile is not complete, but the CF Template and Chef Role are currently being used in Production. Please use github issues for any problems or feature requests.
-
 # Log Aggregation/Analysis
 * ElasticSearch
 * Logstash
