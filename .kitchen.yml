@@ -7,6 +7,9 @@ provisioner:
 
 platforms:
   - name: centos-6.4
+    driver_config:
+      customize:
+        memory: 2048
 
 suites:
   - name: default

@@ -13,6 +13,6 @@ recipe           'operations::infrastructure', 'Installs/Configures the Log Aggr
   supports os
 end
 
-%w{ user yum yum-epel cron rsyslog git python graphite sudo redis java postfix mysql statsd elasticsearch nginx kibana jenkins logstash chatbot }.each do |cb|
+%w{ user yum yum-epel cron rsyslog git python graphite sudo redisio java postfix mysql statsd elasticsearch nginx kibana jenkins logstash chatbot }.each do |cb|
   depends cb
 end

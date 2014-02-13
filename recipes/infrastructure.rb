@@ -26,23 +26,20 @@ template "/etc/redis.conf" do
   owner "root"
   group "root"
   variables()
-  notifies :restart, "execute[redis-server]", :immediately
-  notifies :restart, "execute[logstash_server]", :immediately
+  notifies :restart, "service[redis6379]",  :delayed
+  notifies :restart, "service[logstash_server]", :delayed
 end
 
-execute "git-checkout-anthracite" do
-  cwd "/opt"
-  command "pip install --upgrade flask;pip install --upgrade grequests;git clone https://github.com/Dieterbe/anthracite.git"
-  action :run
-  creates "/opt/anthracite"
+git '/opt/anthracite' do
+  repository "git@github.com:Dieterbe/anthracite.git"
+  reference "master"
+  action :sync
 end
 
-
-execute "git-checkout-tattle" do
-  cwd "/opt"
-  command "git clone https://github.com/wayfair/Graphite-Tattle.git tattle;mkdir tattle/logs"
-  action :run
-  creates "/opt/tattle"
+git '/opt/tattle' do
+  repository "git@github.com:wayfair/Graphite-Tattle.git"
+  reference "master"
+  action :sync
 end
 
 template "#{node['apache']['dir']}/sites-available/tattle" do
