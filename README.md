@@ -33,8 +33,8 @@ Included is a cloudformation template which will setup a 1:1 Min/Max ASG for gar
 
 * Read the [Changelog](CHANGELOG.md)
 
-## Vagrant
-* Read the [Vagrant](VAGRANT.md) Readme
+## Test Kitchen
+* Read the [Test Kitchen](TESTKITCHEN.md) Readme
 
 ## AWS
 * Coming soon

@@ -10,6 +10,8 @@
 		"recipe[cron]",
 		"recipe[rsyslog::client]",
 		"recipe[git]",
+		"recipe[python]",
+		"recipe[python::pip]",
 		"recipe[graphite]",
 		"recipe[sudo]",
 		"recipe[redis]",

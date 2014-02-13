@@ -21,17 +21,13 @@ Array(node['nginx']['sites']['proxy']).each do |u|
   
 end
 
-execute "restart-redis-config" do
-  command "/etc/init.d/redis stop;/etc/init.d/redis start;/etc/init.d/logstash_server restart"
-  action :nothing
-end
-
 template "/etc/redis.conf" do
   source "redis.conf.erb"
   owner "root"
   group "root"
   variables()
-  notifies :run, "execute[restart-redis-config]", :immediately
+  notifies :restart, "execute[redis-server]", :immediately
+  notifies :restart, "execute[logstash_server]", :immediately
 end
 
 execute "git-checkout-anthracite" do

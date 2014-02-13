@@ -2,10 +2,7 @@ default['operations']['ssh_keys'] = ['']
 default['operations']['user'] = 'operations'
 
 default['operations']['packages'] = %w{
-  python
   python-devel
-  python-pip
-  git
   libxml2-devel
   libxslt-devel
 }

@@ -2,3 +2,6 @@
 .pydevproject
 .vagrant
 .zero-knife.rb
+.kitchen/
+.kitchen.local.yml
+Berksfile.lock
