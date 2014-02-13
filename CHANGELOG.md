@@ -3,6 +3,13 @@ operations CHANGELOG
 
 This file is used to list changes made in each version of the operations cookbook.
 
+0.1.2
+-----
+- [anthroprose] - Switching to using test-kitchen as vagrant-berkshelf is being deprecated
+- [anthroprose] - Switched to redisio cookbook as its supported
+- [anthroprose] - Fixed some notify code and git checkouts to not upset foodcritic
+- [anthroprose] - Added a couple serverspec tests to verify running services and port availability
+
 0.1.1
 -----
 - [anthroprose] - Working Vagrantfile, better documentation, seperated basic metric/log shipping dependencies from everything else

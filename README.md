@@ -3,6 +3,8 @@ operations
 
 ![Travis-CI Build Status](https://api.travis-ci.org/Jumpshot/operations.png)
 
+## v0.1.2
+
 Chef Cookbook for a single stack operations machine.
 
 This cookbook and associated role & metadata are currently tuned for a (we started with a c3.large with 2 cores and 3.75G of RAM) are are now using a m3.xlarge with 4cores and 15G of RAM (ElasticSearch some extra headroom to cover large log bursts of the half mill per minute variety and statsD with node eats CPU). In production we are capable of aggregating logs, indexing and serving live analytics for approximately 40,000 Transactions Per Minute of our Web App, which can be anywhere from 3 - 6 log lines per request (NginX, uWSGI, App) (anywhere from 250,000 to 500,000 loglines per minute at peak!). Additionally, and approximately 5,000,000 (yeah, thats Millions) time series datapoints are aggregated and written every minute from diamond and statsD calls in the codebase.
