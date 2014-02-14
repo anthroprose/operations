@@ -31,13 +31,13 @@ template "/etc/redis.conf" do
 end
 
 git '/opt/anthracite' do
-  repository "git@github.com:Dieterbe/anthracite.git"
+  repository "https://github.com/Dieterbe/anthracite.git"
   reference "master"
   action :sync
 end
 
 git '/opt/tattle' do
-  repository "git@github.com:wayfair/Graphite-Tattle.git"
+  repository "https://github.com/wayfair/Graphite-Tattle.git"
   reference "master"
   action :sync
 end

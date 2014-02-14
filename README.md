@@ -1,7 +1,7 @@
 operations
 ==========
 
-![Travis-CI Build Status](https://api.travis-ci.org/Jumpshot/operations.png)
+![Travis-CI Build Status](https://api.travis-ci.org/Jumpshot/operations.png) [![Dependency Status](https://gemnasium.com/Jumpshot/operations.png)](https://gemnasium.com/Jumpshot/operations)
 
 ## v0.1.2
 

@@ -46,6 +46,12 @@ execute "restart-beaver-config" do
   action :nothing
 end
 
+directory '/etc/beaver' do
+  mode "0755"
+  action :create
+  recursive true
+end
+
 template "/etc/beaver/beaver.conf" do
   source "beaver.conf.erb"
   owner "root"
