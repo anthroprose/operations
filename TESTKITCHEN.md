@@ -1,10 +1,11 @@
 ```bash
 apt-get install ruby-dev
-gem install test-kitchen
 git clone git://github.com/Jumpshot/operations.git
 cd operations
-kitchen test
+bundle install
+kitchen converge
 ```
+Unit and Integration tests can be run by using the `kitchen test` command.
 
 You can then SSH into the running VM using the `kitchen login` command.
 

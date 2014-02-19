@@ -3,6 +3,10 @@ operations CHANGELOG
 
 This file is used to list changes made in each version of the operations cookbook.
 
+0.1.3
+-----
+- [anthroprose] - Better test-kitchen documentation and Gemfile updates for lots of version pins (no functional changes)
+
 0.1.2
 -----
 - [anthroprose] - Switching to using test-kitchen as vagrant-berkshelf is being deprecated
