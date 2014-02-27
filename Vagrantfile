@@ -1,6 +1,5 @@
 Vagrant.configure("2") do |config|
 
-  config.berkshelf.enabled = true
   config.omnibus.chef_version = :latest
   config.chef_zero.enabled = true
   config.chef_zero.roles = "roles/operations.json"
@@ -24,35 +23,6 @@ Vagrant.configure("2") do |config|
   config.vm.provision :chef_client do |chef|
     
     chef.log_level = :info
-    
-    chef.json = {
-    	"role" => "operations",
-    	"authorization" => {
-			"sudo" => {
-				"passwordless" => true,
-				"users" => ["vagrant", "operations"]
-			}
-	    },
-	    "elasticsearch" => {
-            "allocated_memory" => "512m",
-            "version" => "0.90.11",
-            "path" => {
-            	"data" => "/opt/elasticsearch/data",
-            	"work" => "/opt/elasticsearch/work",
-            	"logs" => "/opt/elasticsearch/logs"
-            }
-        },
-		"logstash" => {
-            "server" => {
-                "base_config_cookbook" => "operations",
-				"xmx" => "128M",
-				"xms" => "128M",
-				"source_file" => "https://download.elasticsearch.org/logstash/logstash/logstash-1.3.3-flatjar.jar",
-				"version" => "1.3.3",
-				"graphite_ip" => "graphite.internal.operations.com"
-            }
-		},
-    }
     
     chef.run_list = [
 		"role[operations]"

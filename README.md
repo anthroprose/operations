@@ -418,6 +418,12 @@ Features/Usage
 * Alerting for Time Series Data
 * Jenkins for reporting on timed/cron'd operational tasks or actually used for continuous integration/delivery
 
+
+Notes for Scale
+------------
+* If you are running redis 2.4.x increase the ulimit or upgrade to 2.6.x running out of file descriptors will cause 100% CPU and a non-responsive redis [reference](http://code.google.com/p/redis/issues/detail?id=648)
+* node.js statsD is the highest CPU User, consider running a C version
+
 Contributing
 ------------
 

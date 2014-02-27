@@ -116,7 +116,7 @@
 		"authorization" : {
 			"sudo" : {
 				"passwordless" : true,
-				"users" : ["ec2-user", "operations"]
+				"users" : ["vagrant", "ec2-user", "operations"]
 			}
 	    },
 	    "tattle" : {
@@ -136,6 +136,13 @@
 		"postfix" : {
 			"main" : {
 				"smtpd_use_tls" : false
+			}
+		},
+		"mongodb" : {
+			"package_name" : "mongodb-server",
+			"package_version" : "2.4.6-1.el6",
+			"config" : {
+				"dbpath" : "/opt/mongodb"
 			}
 		}
 	}

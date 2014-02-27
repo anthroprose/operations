@@ -36,19 +36,6 @@ git '/opt/anthracite' do
   action :sync
 end
 
-git '/opt/tattle' do
-  repository "https://github.com/wayfair/Graphite-Tattle.git"
-  reference "master"
-  action :sync
-end
-
-template "#{node['apache']['dir']}/sites-available/tattle" do
-  source 'tattle-vhost.conf.erb'
-  notifies :reload, 'service[apache2]'
-end
-
-apache_site 'tattle'
-
 cron_d 'snapshot-backup' do
   minute  0
   hour    "*"
@@ -56,11 +43,32 @@ cron_d 'snapshot-backup' do
   user    'root'
 end
 
-cron_d 'tattle-processor' do
-  minute  "*"
-  hour    "*"
-  command 'cd /opt/tattle;php ./processor.php'
-  user    'root'
+
+###################################################################################
+# New Tool Testing
+# MongoDB Cookbook dosn't support Yum 3.0 or Chef 11 yet, but we're not using it
+# for anything other than metadata, so it really dosnt matter.
+yum_repository '10gen' do
+  description '10gen RPM Repository'
+  baseurl "http://downloads-distro.mongodb.org/repo/redhat/os/x86_64/"
+  action :create
+  gpgcheck false
+end
+
+user_account 'mongod' do
+  comment       'MongoDB User'
+  ssh_keygen    false
+  manage_home   false
+end
+
+package node[:mongodb][:package_name] do
+  action :install
+  version node[:mongodb][:package_version]
+end
+
+service "mongod" do
+  supports :status => true, :restart => true, :reload => true
+  action [ :enable, :start ]
 end
 
 script "install-skyline-prereqs" do
