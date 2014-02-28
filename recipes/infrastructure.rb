@@ -61,9 +61,9 @@ user_account 'mongod' do
   manage_home   false
 end
 
-package node[:mongodb][:package_name] do
+package node['mongodb']['package_name'] do
   action :install
-  version node[:mongodb][:package_version]
+  version node['mongodb']['package_version']
 end
 
 service "mongod" do
