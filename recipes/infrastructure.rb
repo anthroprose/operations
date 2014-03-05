@@ -121,6 +121,6 @@ script "install-seyren" do
   code <<-EOH
   cd /opt/seyren
   mvn clean package
-  GRAPHITE_URL=#{node['seyren']['graphite_url']} SEYREN_URL=http://localhost:#{node['seyren']['listen_port']}/seyren java -jar seyren-web/target/dependency/jetty-runner.jar --port #{node['seyren']['listen_port']} --path /seyren seyren-web/target/*.war
+  GRAPHITE_URL=#{node['seyren']['graphite_url']} SEYREN_URL=http://localhost:#{node['seyren']['listen_port']}/seyren java -jar seyren-web/target/dependency/jetty-runner.jar --port #{node['seyren']['listen_port']} --path /seyren seyren-web/target/*.war &
   EOH
 end
