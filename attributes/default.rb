@@ -20,7 +20,18 @@ default['operations']['infrastructure']['packages'] = %w{
   fuse
   rubygems
   ruby-devel
-  redis
+  lapack
+  lapack-devel
+  blas
+  blas-devel
+}
+
+default['operations']['infrastructure']['pip_packages'] = %w{
   numpy
   scipy
+  scikits.statsmodels
+  pandas
+  patsy
+  statsmodels
+  msgpack_python
 }

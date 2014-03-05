@@ -30,12 +30,34 @@
             "Description" : "Route53 ZoneID"
         },
     
-        "InfraInstanceSize" : {
-            "Default" : "t1.micro",
-            "Type" : "String",
-            "Description" : "Instance Class",
-            "AllowedValues" : [ "t1.micro", "m1.small", "m1.medium", "m1.large", "c3.large", "m3.xlarge" ],
-            "ConstraintDescription" : "must select a valid instance type."
+        "OpsInstanceSize" : {
+            "Default": "t1.micro",
+            "Type": "String",
+            "Description": "Instance Class",
+            "AllowedValues": [
+                "t1.micro",
+                "m1.small",
+                "m1.medium",
+                "m1.large",
+                "m1.xlarge",
+                "m3.medium",
+                "m3.large",
+                "m3.xlarge",
+                "m3.2xlarge",
+                "c1.medium",
+                "c1.xlarge",
+                "c3.large",
+                "c3.xlarge",
+                "c3.2xlarge",
+                "c3.4xlarge",
+                "c3.8xlarge",
+                "cc2.8xlarge",
+                "m2.xlarge",
+                "m2.2xlarge",
+                "m2.4xlarge",
+                "cr1.8xlarge"
+            ],
+            "ConstraintDescription": "must select a valid instance type."
         },
         
         "PrivateRouteTable" : {
@@ -44,10 +66,27 @@
            "Description" : "Private Route Table"
         },
         
+        "PrivateSubnets": {
+            "Default": "",
+            "Type": "CommaDelimitedList",
+            "Description": "Subnets"
+        },
+        
+        "PrivateAZs": {
+            "Default": "",
+            "Type": "CommaDelimitedList",
+            "Description": "List of Private Subnet AZs"
+        },
+        
         "InfraVolumeSize" : {
             "Default" : "100",
             "Type" : "String",
             "Description" : "Volume size in GB"
+        },
+        
+        "ChefClientVersion": {
+            "Type": "String",
+            "Description": "11.10.4"
         }
                 
     },
@@ -64,101 +103,34 @@
           "us-east-1"      : { "64" : "ami-83e4bcea" },
           "us-west-1"      : { "64" : "ami-981f29dd" },
           "us-west-2"      : { "64" : "ami-be1c848e" }
-        },
-        
-		"AWSRegionArch2Ubuntu" : {
-          "us-east-1"      : { "64" : "ami-a73264ce" }
         }
               
     },
     
     "Resources" : {
-
-        "InfraSubnet0" : {
-          "Type" : "AWS::EC2::Subnet",
-          "Properties" : {
-            "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegionAvailabilityZones", { "Ref" : "AWS::Region" }, "1" ]},
-            "VpcId" : { "Ref" : "VPCID" },
-            "CidrBlock" : "10.0.1.96/27",
-            "Tags" : [
-              {"Key" : "Application", "Value" : { "Ref" : "AWS::StackName"} },
-              {"Key" : "Network", "Value" : "Brain" }
-            ]
-          }
-        },
         
-        "InfraSubnet1" : {
-          "Type" : "AWS::EC2::Subnet",
-          "Properties" : {
-            "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegionAvailabilityZones", { "Ref" : "AWS::Region" }, "2" ]},
-            "VpcId" : { "Ref" : "VPCID" },
-            "CidrBlock" : "10.0.1.128/27",
-            "Tags" : [
-              {"Key" : "Application", "Value" : { "Ref" : "AWS::StackName"} },
-              {"Key" : "Network", "Value" : "Brain" }
-            ]
-          }
-        },
-        
-        "InfraSubnet2" : {
-          "Type" : "AWS::EC2::Subnet",
-          "Properties" : {
-            "AvailabilityZone" : { "Fn::FindInMap" : [ "AWSRegionAvailabilityZones", { "Ref" : "AWS::Region" }, "3" ]},
-            "VpcId" : { "Ref" : "VPCID" },
-            "CidrBlock" : "10.0.1.160/27",
-            "Tags" : [
-              {"Key" : "Application", "Value" : { "Ref" : "AWS::StackName"} },
-              {"Key" : "Network", "Value" : "Brain" }
-            ]
-          }
-        },
-                
-        "InfraRouteTableAssociation0" : {
-          "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-          "Properties" : {
-            "SubnetId" : { "Ref" : "InfraSubnet0" },
-            "RouteTableId" : { "Ref" : "PrivateRouteTable" }
-          }
-        },
-        
-        "InfraRouteTableAssociation1" : {
-          "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-          "Properties" : {
-            "SubnetId" : { "Ref" : "InfraSubnet1" },
-            "RouteTableId" : { "Ref" : "PrivateRouteTable" }
-          }
-        },
-
-        "InfraRouteTableAssociation2" : {
-          "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-          "Properties" : {
-            "SubnetId" : { "Ref" : "InfraSubnet2" },
-            "RouteTableId" : { "Ref" : "PrivateRouteTable" }
-          }
-        },
-        
-        "LogSecurityGroup" : {
+        "OpsSecurityGroup" : {
             "Type" : "AWS::EC2::SecurityGroup",
             "Properties" : {
                 "VpcId" : { "Ref" : "VPCID" },
-                "GroupDescription" : "LogStash Security Group",
+                "GroupDescription" : "Operations Security Group",
                 "SecurityGroupIngress" : [ 
-                    { "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "10.0.0.0/17" },
-                    { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "10.0.0.0/17" },
+                    { "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "10.0.0.0/16" },
+                    { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "10.0.0.0/16" },
                     { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "10.10.0.0/24" },
-                    { "IpProtocol" : "tcp", "FromPort" : "5544", "ToPort" : "5544", "CidrIp" : "10.0.0.0/17" },
-                    { "IpProtocol" : "udp", "FromPort" : "8125", "ToPort" : "8125", "CidrIp" : "10.0.0.0/17" },
-                    { "IpProtocol" : "tcp", "FromPort" : "9200", "ToPort" : "9200", "CidrIp" : "10.0.0.0/17" },
+                    { "IpProtocol" : "tcp", "FromPort" : "5544", "ToPort" : "5544", "CidrIp" : "10.0.0.0/16" },
+                    { "IpProtocol" : "udp", "FromPort" : "8125", "ToPort" : "8125", "CidrIp" : "10.0.0.0/16" },
+                    { "IpProtocol" : "tcp", "FromPort" : "9200", "ToPort" : "9200", "CidrIp" : "10.0.0.0/16" },
                     { "IpProtocol" : "tcp", "FromPort" : "9200", "ToPort" : "9200", "CidrIp" : "10.10.0.0/24" },
-                    { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "10.0.0.0/17" },
+                    { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "10.0.0.0/16" },
                     { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "10.10.0.0/24" },
-                    { "IpProtocol" : "tcp", "FromPort" : "6379", "ToPort" : "6379", "CidrIp" : "10.0.0.0/17" },
-                    { "IpProtocol" : "udp", "FromPort" : "9999", "ToPort" : "9999", "CidrIp" : "10.0.0.0/17" }
+                    { "IpProtocol" : "tcp", "FromPort" : "6379", "ToPort" : "6379", "CidrIp" : "10.0.0.0/16" },
+                    { "IpProtocol" : "udp", "FromPort" : "9999", "ToPort" : "9999", "CidrIp" : "10.0.0.0/16" }
                 ]
             }
         },
         
-        "LogASGServerGroup" : {
+        "OpsASGServerGroup" : {
             "UpdatePolicy" : {
               "AutoScalingRollingUpdate" : {
                  "MinInstancesInService" : "1",
@@ -167,9 +139,9 @@
             },
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
-                "AvailabilityZones" : [{ "Fn::FindInMap" : [ "AWSRegionAvailabilityZones", { "Ref" : "AWS::Region" }, "1" ]}, { "Fn::FindInMap" : [ "AWSRegionAvailabilityZones", { "Ref" : "AWS::Region" }, "2" ]}, { "Fn::FindInMap" : [ "AWSRegionAvailabilityZones", { "Ref" : "AWS::Region" }, "3" ]}],
-                "VPCZoneIdentifier" : [{ "Ref" : "InfraSubnet0" }, { "Ref" : "InfraSubnet1" }, { "Ref" : "InfraSubnet2" }],
-                "LaunchConfigurationName" : { "Ref" : "InfraLaunchConfig" },
+                "AvailabilityZones" : { "Ref" : "PrivateAZs" },
+                "VPCZoneIdentifier" : { "Ref" : "PrivateSubnets" },
+                "LaunchConfigurationName" : { "Ref" : "OpsLaunchConfig" },
                 "MinSize" : "1",
                 "MaxSize" : "2",
                 "DesiredCapacity" : "1",
@@ -179,13 +151,13 @@
                 },
                 "Tags" : [ {
                     "Key" : "Name",
-                    "Value" : "Infrastructure",
+                    "Value" : "Operations",
                     "PropagateAtLaunch" : true
                 }]
             }
         },
 
-        "InfraAlarmStatusCheckFailed": {
+        "OpsAlarmStatusCheckFailed": {
             "Type": "AWS::CloudWatch::Alarm",
             "Properties": {
                 "AlarmDescription": "Status Check Failed",
@@ -199,18 +171,18 @@
                 "Dimensions": [
                   {
                     "Name": "AutoScalingGroupName",
-                    "Value": { "Ref": "LogASGServerGroup" }
+                    "Value": { "Ref": "OpsASGServerGroup" }
                   }
                 ],
                 "ComparisonOperator": "GreaterThanOrEqualToThreshold"
             }
         },
         
-        "InfraPolicy": {
+        "OpsPolicy": {
             "Type" : "AWS::IAM::Policy",
             "Properties" : {
-                "Roles": [{"Ref": "InfraRole"}],
-                "PolicyName": "InfraPolicy",
+                "Roles": [{"Ref": "OpsRole"}],
+                "PolicyName": "OpsPolicy",
                 "PolicyDocument": { 
                     "Statement":[
                         {
@@ -250,7 +222,7 @@
             
         },
 
-       "InfraRole": {
+       "OpsRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
                 "AssumeRolePolicyDocument": {
@@ -263,21 +235,21 @@
             }
         },
         
-        "InfraProfile": {
+        "OpsProfile": {
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
                 "Path": "/",
-                "Roles": [{ "Ref": "InfraRole" }]}
+                "Roles": [{ "Ref": "OpsRole" }]}
         },
         
-        "InfraLaunchConfig" : {
+        "OpsLaunchConfig" : {
             "Type" : "AWS::AutoScaling::LaunchConfiguration",
             "Metadata" : {
             	"AWS::CloudFormation::Authentication":{
 					"S3AccessCreds":{
 						"type":"S3",
 						"roleName":{
-							"Ref":"InfraRole"
+							"Ref":"OpsRole"
 						}
 					}
 				},
@@ -329,10 +301,10 @@
             },
             "Properties" : {
                 "KeyName" : "infrastructure",
-                "IamInstanceProfile" : {"Fn::GetAtt" : ["InfraProfile", "Arn"] },
+                "IamInstanceProfile" : {"Fn::GetAtt" : ["OpsProfile", "Arn"] },
                 "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" }, "64" ]},
-                "SecurityGroups" : [ { "Ref" : "LogSecurityGroup" } ],
-                "InstanceType" : { "Ref" : "InfraInstanceSize" },
+                "SecurityGroups" : [ { "Ref" : "OpsSecurityGroup" } ],
+                "InstanceType" : { "Ref" : "OpsInstanceSize" },
                 "InstanceMonitoring" : "false",
                 "UserData": {
                     "Fn::Base64" : { "Fn::Join" : ["", [
@@ -340,15 +312,14 @@
                             "rm -f /etc/update-motd.d/70-available-updates\n",
                             "yum-config-manager --enable epel\n",
                             "yum install -y git xfsprogs aws-cfn-bootstrap aws-apitools-common aws-apitools-ec2 python-pip\n",
-                            "/opt/aws/bin/cfn-init -s ", { "Ref" : "AWS::StackName" }, " -r InfraLaunchConfig --region ", { "Ref" : "AWS::Region" }, "\n",
-                            "pip install httplib2\n",
+                            "/opt/aws/bin/cfn-init -s ", { "Ref" : "AWS::StackName" }, " -r OpsLaunchConfig --region ", { "Ref" : "AWS::Region" }, "\n",
                             "python /usr/bin/route53-entry ", { "Ref" : "ZONEID" }, " operations.internal.", { "Ref" : "DomainSuffix" }, " 300\n",
-                            "python /usr/bin/snapshot-restore Name infrastructure sdh1 ", { "Ref" : "InfraVolumeSize" }, " \"mkfs.xfs -f /dev/sdh1\"\n",
+                            "python /usr/bin/snapshot-restore Name operations sdh1 ", { "Ref" : "OpsVolumeSize" }, " \"mkfs.xfs -f /dev/sdh1\"\n",
                             "echo /dev/sdh1 /opt xfs rw,noatime,nodiratime 0 0 >> /etc/fstab\n",
                             "rm -rf /opt;mkdir /opt;mount /opt\n",
-                            "curl -L https://www.opscode.com/chef/install.sh | bash\n",
-                            "OPSCODE_USER='operations' chef-client -o 'role[operations]' >> /var/log/chef-client.log\n",
-                            "python /usr/bin/snapshot-create Name infrastructure 72 /opt sdh1 \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
+                            "curl -L https://www.opscode.com/chef/install.sh | bash -s -- -v ", { "Ref": "ChefClientVersion" }, "\n",
+                            "OPSCODE_USER=`hostname` chef-client -o 'role[operations]' >> /var/log/chef-client.log\n",
+                            "python /usr/bin/snapshot-create Name operations 72 /opt sdh1 \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
                           ]]
                     }
                 }

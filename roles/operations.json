@@ -17,6 +17,7 @@
 		"recipe[redisio::install]",
   		"recipe[redisio::enable]",
 		"recipe[java]",
+		"recipe[maven]",
 		"recipe[postfix]",
 		"recipe[mysql::server]",
 		"recipe[nginx]",
@@ -44,8 +45,8 @@
             "webserver_listen" : "*"
         },
         "elasticsearch" : {
-            "allocated_memory" : "2048m",
-            "version" : "0.90.11",
+            "allocated_memory" : "1024m",
+            "version" : "0.90.12",
             "path" : {
             	"data" : "/opt/elasticsearch/data",
             	"work" : "/opt/elasticsearch/work",
@@ -67,6 +68,9 @@
 	},
 	"default_attributes" : {
 		"role" : "operations",
+		"java" : {
+			"jdk_version" : 7
+		},
 		"diamond" : {
 			"prefix" : "operations"
 		},
@@ -77,8 +81,8 @@
 		"logstash" : {
             "server" : {
                 "base_config_cookbook" : "operations",
-				"xmx" : "512M",
-				"xms" : "512M",
+				"xmx" : "128M",
+				"xms" : "128M",
 				"source_file" : "https://download.elasticsearch.org/logstash/logstash/logstash-1.3.3-flatjar.jar",
 				"version" : "1.3.3",
 				"graphite_ip" : "graphite.internal.operations.com"
@@ -107,7 +111,7 @@
 				"proxy" : [
 					{ "domain":"graphite.internal.operations.com", "directory":"/opt/graphite/webapp/content/", "proxy_location" : "http://localhost:8080" },
 					{ "domain":"anthracite.internal.operations.com", "directory":"/opt/anthracite/", "proxy_location" : "http://localhost:8081" },
-					{ "domain":"tattle.internal.operations.com", "directory":"/opt/tattle/", "proxy_location" : "http://localhost:8082" },
+					{ "domain":"seyren.internal.operations.com", "directory":"/opt/seyren/", "proxy_location" : "http://localhost:8082" },
 					{ "domain":"skyline.internal.operations.com", "directory":"/opt/skyline/", "proxy_location" : "http://localhost:1500" },
 				 	{ "domain":"jenkins.internal.operations.com", "directory":"/opt/jenkins/", "proxy_location" : "http://localhost:8089" }
 				]
@@ -119,12 +123,9 @@
 				"users" : ["vagrant", "ec2-user", "operations"]
 			}
 	    },
-	    "tattle" : {
+	    "seyren" : {
 	    	"listen_port" : "8082",
-	    	"url" : "tattle.internal.operations.com",
-	    	"admin_email" : "ops@operations.com",
-	    	"doc_root" : "/opt/tattle"
-	    	
+			"graphite_url" : "http://localhost:8080"
 	    },
 		"chatbot" : {
 			"rooms" : ["", ""],
@@ -144,6 +145,11 @@
 			"config" : {
 				"dbpath" : "/opt/mongodb"
 			}
+		},
+		"skyline" : {
+			"graphite_host" : "graphite.internal.operations.com",
+			"email-sender" : "alerts@operations.com",
+			"email-to" : ["user@operations.com"]
 		}
 	}
 }
