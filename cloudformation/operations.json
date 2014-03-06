@@ -60,12 +60,6 @@
             "ConstraintDescription": "must select a valid instance type."
         },
         
-        "PrivateRouteTable" : {
-           "Default" : "",
-           "Type" : "String",
-           "Description" : "Private Route Table"
-        },
-        
         "PrivateSubnets": {
             "Default": "",
             "Type": "CommaDelimitedList",

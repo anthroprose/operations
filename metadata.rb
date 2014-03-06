@@ -5,7 +5,7 @@ maintainer_email 'corley@avast.com'
 license          'GPLv2'
 description      'Installs/Configures a Single Stack Operations Machine'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          '0.1.2'
+version          '0.2.0'
 recipe           'operations', 'Installs everything for shipping metrics & logs.'
 recipe           'operations::infrastructure', 'Installs/Configures the Log Aggregating/Indexing/Querying Machine'
 

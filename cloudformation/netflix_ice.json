@@ -1,0 +1,335 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This sample template creates a demo installation of Netflix Ice application. The template creates an EC2 instance, downloads and configures the application and also creates an S3 bucket for the temporary worker files and the appropriate IAM role for access.",
+    "Parameters": {
+        "KeyName": {
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "255",
+            "AllowedPattern": "[\\x20-\\x7E]*",
+            "ConstraintDescription": "can contain only ASCII characters."
+        },
+        "VPCID" : {
+            "Type" : "String",
+            "Description" : "VPC-ID",
+            "AllowedPattern": "vpc\\-.*",
+            "ConstraintDescription": "Valid vpc-identifier"
+        },
+        "PrivateSubnet": {
+            "Type": "String",
+            "Description": "Subnet",
+            "AllowedPattern": "subnet\\-.*",
+            "ConstraintDescription": "Valid subnet-identifier"
+        },
+        "InstanceType" : {
+            "Default": "m3.medium",
+            "Type": "String",
+            "Description": "Instance Class",
+            "AllowedValues": [
+                "t1.micro",
+                "m1.small",
+                "m1.medium",
+                "m1.large",
+                "m1.xlarge",
+                "m3.medium",
+                "m3.large",
+                "m3.xlarge",
+                "m3.2xlarge",
+                "c1.medium",
+                "c1.xlarge",
+                "c3.large",
+                "c3.xlarge",
+                "c3.2xlarge",
+                "c3.4xlarge",
+                "c3.8xlarge",
+                "cc2.8xlarge",
+                "m2.xlarge",
+                "m2.2xlarge",
+                "m2.4xlarge",
+                "cr1.8xlarge"
+            ],
+            "ConstraintDescription": "must select a valid instance type."
+        },
+        "BillingBucket": {
+            "Description": "The S3 bucket containing detailed billing reports",
+            "Type": "String",
+            "AllowedPattern": "[\\x20-\\x7E]*",
+            "ConstraintDescription": "can contain only ASCII characters."
+        },
+        "AccessLocation": {
+            "Description": " The IP address range that can be used view the Ice interface and also access the instance via SSH",
+            "Type": "String",
+            "MinLength": "9",
+            "MaxLength": "18",
+            "Default": "0.0.0.0/0",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+        },
+        "GrailsVersion" : {
+        	"Default" : "2.2.1",
+        	"Type": "String",
+        	"Description": "Grails Version to Install",
+        	"AllowedPattern": "(\\d{1,4})\\.(\\d{1,4})\\.(\\d{1,4})",
+            "ConstraintDescription": "must be a valid semantic version pattern of x.x.x"
+        },
+        "CompanyName" : {
+        	"Default" : "Test Ice Install",
+        	"Type" : "String",
+        	"Description" : "Company Name to use inside of Ice",
+        	"AllowedPattern": "[\\x20-\\x7E]*",
+            "ConstraintDescription": "can contain only ASCII characters."
+        },
+        "Environment": {
+            "Default": "Development",
+            "Type": "String",
+            "AllowedValues": [
+                "Production",
+                "Staging",
+                "Development"
+            ],
+            "Description": "Name of Environment",
+            "ConstraintDescription": "Production or Staging or Development"
+        }
+    },
+    "Mappings": {
+        "AWSRegion2AMI": {
+            "us-east-1": {
+                "AMI": "ami-bba18dd2"
+            },
+            "us-west-2": {
+                "AMI": "ami-ccf297fc"
+            },
+            "us-west-1": {
+                "AMI": "ami-a43909e1"
+            },
+            "eu-west-1": {
+                "AMI": "ami-5256b825"
+            },
+            "ap-southeast-1": {
+                "AMI": "ami-b4baeee6"
+            },
+            "ap-southeast-2": {
+                "AMI": "ami-5ba83761"
+            },
+            "ap-northeast-1": {
+                "AMI": "ami-0d13700c"
+            },
+            "sa-east-1": {
+                "AMI": "ami-c99130d4"
+            }
+        }
+    },
+    "Resources": {
+        
+        "WorkerBucket": { "Type": "AWS::S3::Bucket" },
+        
+        "IAMRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyName": "ec2readpolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "ec2:Describe*",
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "elasticloadbalancing:Describe*",
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "cloudwatch:ListMetrics",
+                                        "cloudwatch:GetMetricStatistics",
+                                        "cloudwatch:Describe*"
+                                    ],
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "autoscaling:Describe*",
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "PolicyName": "s3readpolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "s3:Get*",
+                                        "s3:List*"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "PolicyName": "s3readwritepolicy",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": "s3:*",
+                                    "Resource": { "Fn::Join": [ "", [ "arn:aws:s3:::", { "Ref": "WorkerBucket" }, "/*" ] ] }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "IceInstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    { "Ref": "IAMRole" }
+                ]
+            }
+        },
+        "InstanceSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable Access to Rails application via port 3000 and SSH access via port 22",
+                "VpcId": { "Ref": "VPCID" },
+                "SecurityGroupIngress": [
+                    { "IpProtocol": "tcp", "FromPort": "22", "ToPort": "22", "CidrIp": { "Ref": "AccessLocation" } },
+                    { "IpProtocol": "tcp", "FromPort": "8080", "ToPort": "8080", "CidrIp": { "Ref": "AccessLocation" } }
+                ]
+            }
+        },
+        "IceInstance": {
+            "Type": "AWS::EC2::Instance",
+			"Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "files": {
+                            "/tmp/grails-download.zip": {
+                                "source": { "Fn::Join": [ "", [ "http://dist.springframework.org.s3.amazonaws.com/release/GRAILS/grails-", { "Ref": "GrailsVersion" }, ".zip" ] ] },
+                                "mode": "000644",
+                                "owner": "root",
+                                "group": "root"
+                            }
+                        },
+                        "packages" : {
+	                        "yum" : {
+							  "java-1.6.0-openjdk-devel" : [],
+							  "git" : []
+							}
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "KeyName": { "Ref": "KeyName" },
+                "SecurityGroupIds": [ { "Ref": "InstanceSecurityGroup" } ],
+                "ImageId": { "Fn::FindInMap": [ "AWSRegion2AMI", { "Ref": "AWS::Region" }, "AMI" ] },
+                "IamInstanceProfile": { "Ref": "IceInstanceProfile" },
+                "InstanceType": { "Ref" : "InstanceType" },
+                "SubnetId": { "Ref": "PrivateSubnet" },
+                "Tags": [
+                    { "Key": "Name", "Value": "Demo Ice Instance" },
+                    { "Key": "Environment", "Value": { "Ref" : "Environment" } }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -ex", "\n",
+                                "yum install -y aws-cfn-bootstrap" , "\n",
+                                "/opt/aws/bin/cfn-init -s ", { "Ref": "AWS::StackName" }, " -r IceInstance --region ", { "Ref": "AWS::Region" }, "\n",
+                                "BILLING_BUCKET=", { "Ref": "BillingBucket" }, "\n",
+                                "WORKER_BUCKET=", { "Ref": "WorkerBucket" }, "\n",
+                                "GRAILS_VERSION=", { "Ref": "GrailsVersion" }, "\n",
+                                "BASE_LOCATION=/root", "\n",
+                                "cd $BASE_LOCATION", "\n",
+                                "HOME_DIR=$(pwd)", "\n",
+                                "export JAVA_HOME=/usr/lib/jvm/java", "\n",
+                                "mkdir -p .grails/wrapper/", "\n",
+                                "cd .grails/wrapper/", "\n",
+                                "mkdir ${GRAILS_VERSION}", "\n",
+                                "cd ${GRAILS_VERSION}", "\n",
+                                "mv /tmp/grails-download.zip ./", "\n",
+                                "unzip grails-download.zip", "\n",
+                                "rm -f grails-download.zip", "\n",
+                                "export GRAILS_HOME=${HOME_DIR}/.grails/wrapper/${GRAILS_VERSION}/grails-${GRAILS_VERSION}/", "\n",
+                                "export PATH=$PATH:${HOME_DIR}/.grails/wrapper/${GRAILS_VERSION}/grails-${GRAILS_VERSION}/bin/", "\n",
+                                "cd $BASE_LOCATION", "\n",
+                                "git clone https://github.com/Netflix/ice.git", "\n",
+                                "cd ice", "\n",
+                                "INSTALL_DIR=$(pwd)", "\n",
+                                "grails wrapper", "\n",
+                                "rm -f grails-app/i18n/messages.properties", "\n",
+                                "mkdir ${HOME_DIR}/ice_processor", "\n",
+                                "mkdir ${HOME_DIR}/ice_reader", "\n",
+                                "cp ${INSTALL_DIR}/src/java/sample.properties ${INSTALL_DIR}/src/java/ice.properties", "\n",
+                                "sed -i 's/ice.billing_s3bucketname=billing_s3bucketname1,billing_s3bucketname2/ice.billing_s3bucketname='${BILLING_BUCKET}'/g' ${INSTALL_DIR}/src/java/ice.properties", "\n",
+                                "sed -i 's/ice.work_s3bucketname=work_s3bucketname/ice.work_s3bucketname='${WORKER_BUCKET}'/g' ${INSTALL_DIR}/src/java/ice.properties", "\n",
+                                "sed -i 's@ice.processor.localDir=/mnt/ice_processor@ice.processor.localDir=/root/ice_processor@g' ${INSTALL_DIR}/src/java/ice.properties", "\n",
+                                "sed -i 's@ice.reader.localDir=/mnt/ice_reader@ice.reader.localDir=/root/ice_reader@g' ${INSTALL_DIR}/src/java/ice.properties", "\n",
+                                "sed -i 's/ice.reader=false/ice.reader=true/g' ${INSTALL_DIR}/src/java/ice.properties", "\n",
+                                "sed -i 's/ice.companyName=Your Company Name/ice.companyName=", { "Ref": "CompanyName" }, "/g' ${INSTALL_DIR}/src/java/ice.properties", "\n",
+                                "curl -X PUT -H 'Content-Type:' --data-binary '{\"Status\" : \"SUCCESS\",", "\"Reason\" : \"Ice is installed, please wait 10 minutes for initial processing to complete\",", "\"UniqueId\" : \"myapp\",", "\"Data\" : \"Done\"}' ", "\"", { "Ref": "WaitForInstanceWaitHandle" }, "\"\n",
+                                "./grailsw run-app", "\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "WaitForInstanceWaitHandle": {
+            "Type": "AWS::CloudFormation::WaitConditionHandle",
+            "Properties": {}
+        },
+        "WaitForInstance": {
+            "Type": "AWS::CloudFormation::WaitCondition",
+            "DependsOn": "IceInstance",
+            "Properties": {
+                "Handle": { "Ref": "WaitForInstanceWaitHandle" },
+                "Timeout": "600"
+            }
+        }
+    },
+    "Outputs": {
+        "IceDashboard": {
+            "Description": "The URL for the newly created Ice installation",
+            "Value": { "Fn::Join": [ "", [ "http://", { "Fn::GetAtt": [ "IceInstance", "PrivateIp" ] }, ":8080/ice/dashboard/summary" ] ] }
+        },
+        "S3WorkerBucket": {
+            "Description": "The bucket containing temporary file for Ice. NOTE: This bucket needs to be emptied before the stack can be successfully deleted",
+            "Value": { "Ref": "WorkerBucket" }
+        }
+    }
+}
