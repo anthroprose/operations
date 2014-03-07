@@ -31,6 +31,9 @@ Included is a cloudformation template which will setup a 1:1 Min/Max ASG for gar
 * Jenkins
 * Test Kitchen (In Progress)
 
+# Infrastructure Reporting
+* Netflix's ICE for AWS Billing Reporting
+
 --------------------------------------------------------------------------------------
 
 ## Changelog
@@ -52,7 +55,6 @@ Requirements
 #### packages
 - `rubygems` - chef, and gems
 - `ruby-devel` - for compiling and installing gems
-- `numpy` - for crunching stats
 
 #### pip packages
 - `beaver==31` - Log shipping
@@ -60,6 +62,7 @@ Requirements
 - `grequests` - gevent async http
 - `scikits.statsmodels` - stats
 - `scipy` - stats
+- `numpy` - for crunching stats
 - `pandas` - data structures
 - `patsy` - statistical models
 - `statsmodels` - statistical models
@@ -80,8 +83,9 @@ Requirements
 - `recipe[chef-solo-search]` - if not using chef server
 - `recipe[graphite]` - time series graphing
 - `recipe[sudo]` - users
-- `recipe[redis]` - log aggregation queue
+- `recipe[redisio]` - log aggregation queue
 - `recipe[java]` - all the things
+- `recipe[maven]` - for building seyren
 - `recipe[postfix]` - alerting
 - `recipe[mysql::server]` - metadata storage
 - `recipe[logstash::server]` - log aggregation
@@ -97,13 +101,13 @@ Requirements
 - [diamond](https://github.com/BrightcoveOS/Diamond) - metrics & monitoring
 - [beaver](https://github.com/josegonzalez/beaver) - log shipping
 - [anthracite](https://github.com/Dieterbe/anthracite) - event annotation for metrics
-- [tattle](https://github.com/wayfair/Graphite-Tattle) - alerting for graphite
-- [aws-minions](https://github.com/Jumpshot/aws-minions) - snapshot backups & restores, dynamic dns
-
-#### to consider
 - [seyren](https://github.com/scobal/seyren) - better alerting than tattle
+- [aws-minions](https://github.com/Jumpshot/aws-minions) - snapshot backups & restores, dynamic dns
 - [skyline](https://github.com/etsy/skyline) - anomaly detection
 - [test kitchen](https://github.com/test-kitchen/test-kitchen) - chef continuous integration
+- [ice](https://github.com/Netflix/ice) - aws billing reports
+
+#### to consider
 - [revily](https://github.com/revily/revily) - On-call scheduling and incident response
 
 Attributes
@@ -417,6 +421,12 @@ Features/Usage
 * Event annotation for tracking operation events such as deploys/downtime along with graphs
 * Alerting for Time Series Data
 * Jenkins for reporting on timed/cron'd operational tasks or actually used for continuous integration/delivery
+
+
+Notes for Scale
+------------
+* If you are running redis 2.4.x increase the ulimit or upgrade to 2.6.x running out of file descriptors will cause 100% CPU and a non-responsive redis [reference](http://code.google.com/p/redis/issues/detail?id=648)
+* node.js statsD is the highest CPU User, consider running a C version
 
 Contributing
 ------------

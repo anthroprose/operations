@@ -1,5 +1,4 @@
 # Encoding: utf-8
-
 require_relative 'spec_helper'
 
 describe service('nginx') do
@@ -41,6 +40,11 @@ describe service('statsd') do
 end
 
 describe service('carbon-cache') do
+  it { should be_enabled   }
+  it { should be_running   }
+end
+
+describe service('mongod') do
   it { should be_enabled   }
   it { should be_running   }
 end

@@ -3,6 +3,13 @@ operations CHANGELOG
 
 This file is used to list changes made in each version of the operations cookbook.
 
+0.2.0
+-----
+- [anthroprose] - Replaced Tattle with Seyren, also have a running Skyline
+- [anthroprose] - Lots of updates for the Yum 3.x cookbook line
+- [anthroprose] - Added Netflix's ICE to a seperate Cloudformation Template
+- [anthroprose] - Switched to Redis 2.6.x via redisio cookbook instead of epel packages
+
 0.1.3
 -----
 - [anthroprose] - Better test-kitchen documentation and Gemfile updates for lots of version pins (no functional changes)
