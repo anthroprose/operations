@@ -3,6 +3,10 @@ operations CHANGELOG
 
 This file is used to list changes made in each version of the operations cookbook.
 
+0.2.1
+-----
+- [anthroprose] - Some fixes for jenkins being missing and the mongodb package being wrong
+
 0.2.0
 -----
 - [anthroprose] - Replaced Tattle with Seyren, also have a running Skyline

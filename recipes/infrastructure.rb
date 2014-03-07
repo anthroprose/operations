@@ -44,6 +44,7 @@ end
 # New Tool Testing
 # MongoDB Cookbook dosn't support Yum 3.0 or Chef 11 yet, but we're not using it
 # for anything other than metadata, so it really dosnt matter.
+# This does mean that mongo dosn't live on /opt/ yet and so seyren wont be backed up!
 yum_repository '10gen' do
   description '10gen RPM Repository'
   baseurl "http://downloads-distro.mongodb.org/repo/redhat/os/x86_64/"
@@ -59,7 +60,6 @@ end
 
 package node['mongodb']['package_name'] do
   action :install
-  version node['mongodb']['package_version']
 end
 
 service "mongod" do
