@@ -3,7 +3,7 @@ operations
 
 [![Travis-CI Build Status](https://api.travis-ci.org/Jumpshot/operations.png)](https://travis-ci.org/Jumpshot/operations) [![Dependency Status](https://gemnasium.com/Jumpshot/operations.png)](https://gemnasium.com/Jumpshot/operations)
 
-## v0.1.3
+## v0.2.0
 
 Chef Cookbook for a single stack operations machine.
 
