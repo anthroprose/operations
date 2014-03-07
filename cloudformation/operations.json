@@ -31,7 +31,7 @@
         },
     
         "OpsInstanceSize" : {
-            "Default": "t1.micro",
+            "Default": "m3.xlarge",
             "Type": "String",
             "Description": "Instance Class",
             "AllowedValues": [
@@ -72,8 +72,8 @@
             "Description": "List of Private Subnet AZs"
         },
         
-        "InfraVolumeSize" : {
-            "Default" : "100",
+        "OpsVolumeSize" : {
+            "Default" : "500",
             "Type" : "String",
             "Description" : "Volume size in GB"
         },
@@ -288,7 +288,20 @@
 	                           "mode" : "000777",
 	                           "owner" : "root",
 	                           "group" : "root"
-	                        }
+	                        },
+	                        "/etc/chef/init.json": {
+                                "mode": "000600",
+                                "owner": "root",
+                                "group": "root",
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "{\"run_list\":[\"role[operations]\"]}"
+                                        ]
+                                    ]
+                                }
+                            }
                         }
                     }
                 }

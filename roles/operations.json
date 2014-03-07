@@ -89,7 +89,7 @@
             }
 		},
 		"graphite" : {
-			"version" : "0.9.12"
+			"version" : "0.9.10"
 		},
 		"statsd" : {
 			"delete_idle_stats" : true,
@@ -150,6 +150,9 @@
 			"graphite_host" : "graphite.internal.operations.com",
 			"email-sender" : "alerts@operations.com",
 			"email-to" : ["user@operations.com"]
+		},
+		"maven" : {
+			"version" : "3.2.1"
 		}
 	}
 }

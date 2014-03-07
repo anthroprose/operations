@@ -31,6 +31,9 @@ Included is a cloudformation template which will setup a 1:1 Min/Max ASG for gar
 * Jenkins
 * Test Kitchen (In Progress)
 
+# Infrastructure Reporting
+* Netflix's ICE for AWS Billing Reporting
+
 --------------------------------------------------------------------------------------
 
 ## Changelog
@@ -102,6 +105,7 @@ Requirements
 - [aws-minions](https://github.com/Jumpshot/aws-minions) - snapshot backups & restores, dynamic dns
 - [skyline](https://github.com/etsy/skyline) - anomaly detection
 - [test kitchen](https://github.com/test-kitchen/test-kitchen) - chef continuous integration
+- [ice](https://github.com/Netflix/ice) - aws billing reports
 
 #### to consider
 - [revily](https://github.com/revily/revily) - On-call scheduling and incident response

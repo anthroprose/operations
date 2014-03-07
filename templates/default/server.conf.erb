@@ -16,6 +16,7 @@ input {
 }
 
 filter {
+
 	if [type] == "nginx" {
 		grok {
 			match => ["message", "%{IPORHOST:clientip} (?:%{USER:auth}|-) (?:%{USER:ident}|-) \[%{HTTPDATE:timestamp}\] \"(?:%{WORD:verb} %{NOTSPACE:request}(?: HTTP/%{NUMBER:httpversion})?|%{DATA:rawrequest})\" %{NUMBER:response} (?:%{NUMBER:bytes}|-) \"(?:%{QS:referrer}|-)\" %{QS:agent} \"%{IPORHOST:loadbalancer}\""]
@@ -23,8 +24,29 @@ filter {
 
 		geoip {
 			source => "clientip"
+			add_field => [ "lonlat", "%{[geoip][longitude]},%{[geoip][latitude]}" ]
 		}
 	}
+	
+	########## Custom JSON Formatting for Apps
+	if [type] == "brain" {
+		json {
+			source => "message"
+		}
+	}
+
+	if [type] == "brain-worker" {
+		json {
+			source => "message"
+		}
+	}
+	
+	if [type] == "autoscale-alert" {
+		json {
+			source => "message"
+		}
+	}
+
 }
 
 output {
