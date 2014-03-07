@@ -18,6 +18,7 @@
   		"recipe[redisio::enable]",
 		"recipe[java]",
 		"recipe[maven]",
+		"recipe[jenkins::master]",
 		"recipe[postfix]",
 		"recipe[mysql::server]",
 		"recipe[nginx]",
@@ -57,13 +58,6 @@
         	"server_root_password" : "xxx",
         	"server_debian_password" : "xxx",
         	"server_repl_password" : "xxx"
-        },
-		"jenkins" : { 
-        	"server" : { 
-        		"port" : "8089",
-        		"home" : "/opt/jenkins",
-        		"url" : "http://jenkins.internal.operations.com"
-        	} 
         }
 	},
 	"default_attributes" : {
@@ -153,6 +147,13 @@
 		},
 		"maven" : {
 			"version" : "3.2.1"
-		}
+		},
+		"jenkins" : { 
+        	"master" : { 
+        		"port" : "8089",
+        		"home" : "/opt/jenkins",
+        		"host" : "jenkins.internal.operations.com"
+        	} 
+        }
 	}
 }
