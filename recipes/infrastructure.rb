@@ -26,10 +26,12 @@ Array(node['nginx']['sites']['proxy']).each do |u|
   
 end
 
+# Anthracite uses it's own versions of beaker/rawes, so use the submodules!
 git '/opt/anthracite' do
   repository "https://github.com/Dieterbe/anthracite.git"
   reference "master"
   action :sync
+  enable_submodules true
 end
 
 cron_d 'snapshot-backup' do
@@ -121,6 +123,6 @@ script "install-seyren" do
   code <<-EOH
   cd /opt/seyren
   mvn clean package
-  GRAPHITE_URL=#{node['seyren']['graphite_url']} SEYREN_URL=http://localhost:#{node['seyren']['listen_port']}/seyren java -jar seyren-web/target/dependency/jetty-runner.jar --port #{node['seyren']['listen_port']} --path /seyren seyren-web/target/*.war &
+  SEYREN_LOG_PATH=/var/log/ GRAPHITE_NULL_AS_ZERO_ENABLE=true GRAPHITE_URL=#{node['seyren']['graphite_url']} SEYREN_URL=http://localhost:#{node['seyren']['listen_port']}/seyren java -jar seyren-web/target/dependency/jetty-runner.jar --port #{node['seyren']['listen_port']} --path /seyren seyren-web/target/*.war &
   EOH
 end

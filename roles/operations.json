@@ -39,6 +39,11 @@
             "listen_port" : "8080",
             "graphite_web" : { 
                 "bitmap_support" : false
+            }
+            "carbon": {
+            	"relay" : {
+            		"destinations" : "127.0.0.1:2004,127.0.0.1:2024"
+            	}
             } 
         },
         "kibana" : {
@@ -127,12 +132,7 @@
 			"password" : "",
 			"nickname" : "",
 			"api_key" : ""	
-		},
-		"postfix" : {
-			"main" : {
-				"smtpd_use_tls" : false
-			}
-		},
+		}
 		"mongodb" : {
 			"package_name" : "mongodb-server",
 			"package_version" : "2.4.6-1.el6",
