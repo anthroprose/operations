@@ -40,11 +40,6 @@
             "graphite_web" : { 
                 "bitmap_support" : false
             }
-            "carbon": {
-            	"relay" : {
-            		"destinations" : "127.0.0.1:2004,127.0.0.1:2024"
-            	}
-            } 
         },
         "kibana" : {
             "webserver_hostname" : "kibana.internal.operations.com",
@@ -133,6 +128,11 @@
 			"nickname" : "",
 			"api_key" : ""	
 		},
+		"postfix" : {
+			"main" : {
+				"smtpd_use_tls" : false
+			}
+		},
 		"mongodb" : {
 			"package_name" : "mongodb-server",
 			"package_version" : "2.4.6-1.el6",
@@ -145,8 +145,10 @@
 			"email-sender" : "alerts@operations.com",
 			"email-to" : ["user@operations.com"]
 		},
-		"maven" : {
-			"version" : "3.2.1"
+		"maven": {
+			"3" : {
+				"version" : "3.2.1"
+			}
 		},
 		"jenkins" : { 
         	"master" : { 
@@ -157,7 +159,7 @@
         },
         "redisio" : {
         	"default_settings" : {
-				"maxmemory" : "2048"
+				"maxmemory" : "1g"
 			}
 		}
 	}
