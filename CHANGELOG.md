@@ -6,6 +6,7 @@ This file is used to list changes made in each version of the operations cookboo
 0.3.0
 -----
 - [anthroprose] - Switching to the new Amazon Linux AMI, also going PIOPs on the ebs volume.
+- [anthroprose] - Upgrade of major versions for elasticsearch & logstash
 
 0.2.1
 -----
