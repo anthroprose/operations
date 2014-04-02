@@ -35,3 +35,5 @@ default['operations']['infrastructure']['pip_packages'] = %w{
   statsmodels
   msgpack_python
 }
+
+default['mysql']['server']['packages'] = ['mysql-server']

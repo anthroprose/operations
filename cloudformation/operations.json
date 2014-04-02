@@ -14,20 +14,22 @@
             "Type" : "String",
             "Description" : "Queue Topic ARN for Message Bus"
         },
-        
-        "DomainSuffix" : {
-            "Type" : "String",
-            "Description" : "Domain Suffix: domain.com or dev.domain.com"
-        },
     
         "VPCID" : {
             "Type" : "String",
             "Description" : "VPC-ID"
         },
+    
+        "PrivateSubnets": {
+            "Default": "",
+            "Type": "CommaDelimitedList",
+            "Description": "Subnets"
+        },
         
-        "ZONEID" : {
-            "Type" : "String",
-            "Description" : "Route53 ZoneID"
+        "PrivateAZs": {
+            "Default": "",
+            "Type": "CommaDelimitedList",
+            "Description": "List of Private Subnet AZs"
         },
     
         "OpsInstanceSize" : {
@@ -60,22 +62,22 @@
             "ConstraintDescription": "must select a valid instance type."
         },
         
-        "PrivateSubnets": {
-            "Default": "",
-            "Type": "CommaDelimitedList",
-            "Description": "Subnets"
-        },
-        
-        "PrivateAZs": {
-            "Default": "",
-            "Type": "CommaDelimitedList",
-            "Description": "List of Private Subnet AZs"
-        },
-        
         "OpsVolumeSize" : {
-            "Default" : "500",
+            "Default" : "1024",
             "Type" : "String",
             "Description" : "Volume size in GB"
+        },
+        
+        "OpsVolumePIOPs" : {
+            "Default" : "500",
+            "Type" : "String",
+            "Description" : "PIOPs to give the Volume"
+        },
+        
+        "OpsVolumeTag" : {
+            "Default" : "operations",
+            "Type" : "String",
+            "Description" : "Ops Volume Tag"
         },
         
         "ChefClientVersion": {
@@ -94,9 +96,9 @@
         },
         
         "AWSRegionArch2AMI" : {
-          "us-east-1"      : { "64" : "ami-83e4bcea" },
-          "us-west-1"      : { "64" : "ami-981f29dd" },
-          "us-west-2"      : { "64" : "ami-be1c848e" }
+          "us-east-1"      : { "64" : "ami-51736438" },
+          "us-west-1"      : { "64" : "ami-60f69f50" },
+          "us-west-2"      : { "64" : "ami-e6f1cfa3" }
         }
               
     },
@@ -308,6 +310,7 @@
             },
             "Properties" : {
                 "KeyName" : "infrastructure",
+                "EbsOptimized" : true,
                 "IamInstanceProfile" : {"Fn::GetAtt" : ["OpsProfile", "Arn"] },
                 "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" }, "64" ]},
                 "SecurityGroups" : [ { "Ref" : "OpsSecurityGroup" } ],
@@ -318,15 +321,14 @@
                             "#!/bin/bash\n",                         
                             "rm -f /etc/update-motd.d/70-available-updates\n",
                             "yum-config-manager --enable epel\n",
-                            "yum install -y git xfsprogs aws-cfn-bootstrap aws-apitools-common aws-apitools-ec2 python-pip\n",
+                            "yum install -y git xfsprogs aws-cfn-bootstrap python-pip\n",
                             "/opt/aws/bin/cfn-init -s ", { "Ref" : "AWS::StackName" }, " -r OpsLaunchConfig --region ", { "Ref" : "AWS::Region" }, "\n",
-                            "python /usr/bin/route53-entry ", { "Ref" : "ZONEID" }, " operations.internal.", { "Ref" : "DomainSuffix" }, " 300\n",
-                            "python /usr/bin/snapshot-restore Name operations sdh1 ", { "Ref" : "OpsVolumeSize" }, " \"mkfs.xfs -f /dev/sdh1\"\n",
+                            "python /usr/bin/snapshot-restore Name ", { "Ref" : "OpsVolumeTag" }, " sdh1 ", { "Ref" : "OpsVolumeSize" }, " \"mkfs.xfs -f /dev/sdh1\" ", { "Ref" : "OpsVolumePIOPs" }, "\n",
                             "echo /dev/sdh1 /opt xfs rw,noatime,nodiratime 0 0 >> /etc/fstab\n",
                             "rm -rf /opt;mkdir /opt;mount /opt\n",
                             "curl -L https://www.opscode.com/chef/install.sh | bash -s -- -v ", { "Ref": "ChefClientVersion" }, "\n",
                             "OPSCODE_USER=`hostname` chef-client -o 'role[operations]' >> /var/log/chef-client.log\n",
-                            "python /usr/bin/snapshot-create Name operations 72 /opt sdh1 \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
+                            "python /usr/bin/snapshot-create Name ", { "Ref" : "OpsVolumeTag" }, " 72 /opt sdh1 \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
                           ]]
                     }
                 }

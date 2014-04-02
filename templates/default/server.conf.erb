@@ -5,6 +5,11 @@ input {
     port => 5544
   }
   
+  tcp {
+    type => "chef_handler"
+    port => "5959"
+  }
+  
   redis {
   	
     host => "127.0.0.1"
@@ -46,6 +51,12 @@ filter {
 			source => "message"
 		}
 	}
+	
+	if [type] == "chef_handler" {
+		json {
+			
+		}
+	}	
 
 }
 

@@ -132,7 +132,7 @@
 			"password" : "",
 			"nickname" : "",
 			"api_key" : ""	
-		}
+		},
 		"mongodb" : {
 			"package_name" : "mongodb-server",
 			"package_version" : "2.4.6-1.el6",
@@ -154,6 +154,11 @@
         		"home" : "/opt/jenkins",
         		"host" : "jenkins.internal.operations.com"
         	} 
-        }
+        },
+        "redisio" : {
+        	"default_settings" : {
+				"maxmemory" : "2048"
+			}
+		}
 	}
 }

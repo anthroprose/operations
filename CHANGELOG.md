@@ -3,6 +3,10 @@ operations CHANGELOG
 
 This file is used to list changes made in each version of the operations cookbook.
 
+0.3.0
+-----
+- [anthroprose] - Switching to the new Amazon Linux AMI, also going PIOPs on the ebs volume.
+
 0.2.1
 -----
 - [anthroprose] - Some fixes for jenkins being missing and the mongodb package being wrong
