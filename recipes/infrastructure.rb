@@ -104,9 +104,9 @@ script "run-skyline" do
   group "root"
   code <<-EOH
   cd /opt/skyline/bin
-  ./horizon.d start
-  ./analyzer.d start
-  ./webapp.d start
+  #./horizon.d start
+  #./analyzer.d start
+  #./webapp.d start
   EOH
 end
 
