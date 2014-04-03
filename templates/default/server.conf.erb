@@ -54,7 +54,7 @@ filter {
 	
 	if [type] == "chef_handler" {
 		json {
-			
+			source => "message"
 		}
 	}	
 

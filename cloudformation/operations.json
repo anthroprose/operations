@@ -323,12 +323,12 @@
                             "yum-config-manager --enable epel\n",
                             "yum install -y git xfsprogs aws-cfn-bootstrap python-pip\n",
                             "/opt/aws/bin/cfn-init -s ", { "Ref" : "AWS::StackName" }, " -r OpsLaunchConfig --region ", { "Ref" : "AWS::Region" }, "\n",
-                            "python /usr/bin/snapshot-restore Name ", { "Ref" : "OpsVolumeTag" }, " sdh1 ", { "Ref" : "OpsVolumeSize" }, " \"mkfs.xfs -f /dev/sdh1\" ", { "Ref" : "OpsVolumePIOPs" }, "\n",
-                            "echo /dev/sdh1 /opt xfs rw,noatime,nodiratime 0 0 >> /etc/fstab\n",
+                            "python /usr/bin/snapshot-restore Name ", { "Ref" : "OpsVolumeTag" }, " sdh ", { "Ref" : "OpsVolumeSize" }, " \"mkfs.xfs -f /dev/sdh\" ", { "Ref" : "OpsVolumePIOPs" }, "\n",
+                            "echo /dev/sdh /opt xfs rw,noatime,nodiratime 0 0 >> /etc/fstab\n",
                             "rm -rf /opt;mkdir /opt;mount /opt\n",
                             "curl -L https://www.opscode.com/chef/install.sh | bash -s -- -v ", { "Ref": "ChefClientVersion" }, "\n",
                             "OPSCODE_USER=`hostname` chef-client -o 'role[operations]' >> /var/log/chef-client.log\n",
-                            "python /usr/bin/snapshot-create Name ", { "Ref" : "OpsVolumeTag" }, " 72 /opt sdh1 \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
+                            "python /usr/bin/snapshot-create Name ", { "Ref" : "OpsVolumeTag" }, " 72 /opt sdh \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
                           ]]
                     }
                 }

@@ -159,7 +159,8 @@
         },
         "redisio" : {
         	"default_settings" : {
-				"maxmemory" : "1g"
+				"maxmemory" : "1g",
+				"dir" : "/opt/redis"
 			}
 		}
 	}
