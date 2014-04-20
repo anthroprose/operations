@@ -134,8 +134,7 @@
 			}
 		},
 		"mongodb" : {
-			"package_name" : "mongodb-server",
-			"package_version" : "2.4.6-1.el6",
+			"package_name" : "mongodb-org",
 			"config" : {
 				"dbpath" : "/opt/mongodb"
 			}

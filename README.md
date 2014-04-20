@@ -1,38 +1,46 @@
-operations
+continuous operations
 ==========
 
 [![Travis-CI Build Status](https://api.travis-ci.org/Jumpshot/operations.png)](https://travis-ci.org/Jumpshot/operations) [![Dependency Status](https://gemnasium.com/Jumpshot/operations.png)](https://gemnasium.com/Jumpshot/operations)
 
-## v0.2.0
+## v1.0.0
 
 Chef Cookbook for a single stack operations machine.
 
-This cookbook and associated role & metadata are currently tuned for a (we started with a c3.large with 2 cores and 3.75G of RAM) are are now using a m3.xlarge with 4cores and 15G of RAM (ElasticSearch some extra headroom to cover large log bursts of the half mill per minute variety and statsD with node eats CPU). In production we are capable of aggregating logs, indexing and serving live analytics for approximately 40,000 Transactions Per Minute of our Web App, which can be anywhere from 3 - 6 log lines per request (NginX, uWSGI, App) (anywhere from 250,000 to 500,000 loglines per minute at peak!). Additionally, and approximately 5,000,000 (yeah, thats Millions) commited time series datapoints are aggregated and written across a few thousand metrics every minute from diamond and statsD calls in the codebase.
+This cookbook and associated role & metadata are currently tuned for a (we started with a c3.large with 2 cores and 3.75G of RAM) however are now using a m3.xlarge with 4cores and 15G of RAM (ElasticSearch some extra headroom to cover large log bursts of the half mill per minute variety and statsD with node eats CPU).
+In production we are capable of aggregating logs, indexing and serving live analytics for approximately 40,000 Transactions Per Minute of our Web App, which can be anywhere from 3 - 6 log lines per request (NginX, uWSGI, App) (anywhere from 250,000 to 500,000 loglines per minute at peak!).
+Additionally, and approximately 5,000,000 (yeah, thats Millions) commited time series datapoints are aggregated and written across a few thousand metrics every minute from diamond and statsD calls in the codebase.
 
-No special tuning has occured, and we are using standard EBS, no PIOPs or kernel settings at this point. We're thinking about switching to https://github.com/armon/statsite or https://github.com/bitly/statsdaemon for a less CPU intensive statsD daemon (it currently uses more CPU than ElasticSearch, Carbon or Logstash).
+The only thing besides verticle scaling that has occured is switching to PIOPs (500 IOPs). We're thinking about switching to https://github.com/armon/statsite or https://github.com/bitly/statsdaemon for a less CPU intensive statsD daemon (it currently uses more CPU than ElasticSearch, Carbon or Logstash).
 
-Included is a cloudformation template which will setup a 1:1 Min/Max ASG for guaranteeing uptime of the instance. All data is stored under /opt which is an EBS Mountpoint in AWS. Snapshots are taken every hour and on boot/reboot the machine checks for old snapshots to mount under /opt instead of re-installing or re-creating the drive.  At most you may loose up to 1 hour of data with this setup, small gaps in graphs. 
+Included is a CloudFormation template which will setup a 1:1 Min/Max ASG for guaranteeing uptime of the instance. All data is stored under /opt which is an EBS Mountpoint in AWS. Snapshots are taken every hour and on boot/reboot the machine checks for old snapshots to mount under /opt instead of re-installing or re-creating the drive. At most you may loose up to 1 hour of data with this setup, small gaps in graphs. 
 
 # Log Aggregation/Analysis
-* ElasticSearch
-* Logstash
+* ElasticSearch v1.1.0
+* Logstash v1.4.0
 * Kibana
 * Rsyslog
 * Redis
 * Beaver
 
 # Time Series / Metrics
-* Graphite
+* Graphite v0.9.10
 * StatsD
-* Tattle (probably going to replace with seyren)
-* Skyline (In Progress)
+* Seyren
 
 # Continuous Integration / Delivery
 * Jenkins
-* Test Kitchen (In Progress)
+* Chef DK
+* Test Kitchen
 
 # Infrastructure Reporting
-* Netflix's ICE for AWS Billing Reporting
+* Netflix's ICE for AWS Billing & Usage Reporting
+
+## AWS
+* CloudFormation Templates for Networking
+* VPN Machine
+* CloudWatch Metrics Insertion
+* CloudWatch Alert Processing
 
 --------------------------------------------------------------------------------------
 
@@ -42,9 +50,6 @@ Included is a cloudformation template which will setup a 1:1 Min/Max ASG for gua
 
 ## Test Kitchen
 * Read the [Test Kitchen](TESTKITCHEN.md) Readme
-
-## AWS
-* Coming soon
 
 --------------------------------------------------------------------------------------
 
@@ -60,12 +65,6 @@ Requirements
 - `beaver==31` - Log shipping
 - `flask` - lightweight web framework
 - `grequests` - gevent async http
-- `scikits.statsmodels` - stats
-- `scipy` - stats
-- `numpy` - for crunching stats
-- `pandas` - data structures
-- `patsy` - statistical models
-- `statsmodels` - statistical models
 - `msgpack_python` - serialization
 - `boto` - api calls
 
@@ -103,7 +102,6 @@ Requirements
 - [anthracite](https://github.com/Dieterbe/anthracite) - event annotation for metrics
 - [seyren](https://github.com/scobal/seyren) - better alerting than tattle
 - [aws-minions](https://github.com/Jumpshot/aws-minions) - snapshot backups & restores, dynamic dns
-- [skyline](https://github.com/etsy/skyline) - anomaly detection
 - [test kitchen](https://github.com/test-kitchen/test-kitchen) - chef continuous integration
 - [ice](https://github.com/Netflix/ice) - aws billing reports
 
@@ -112,10 +110,17 @@ Requirements
 
 Features/Usage
 ----------
-#### operations::default
 
+#### Notes
+* This is currently being refactored into a wrapper cookbook and the role is going away!
+
+#### operations::handler
+* Include this on any node for Chef report_handler and exception_handler functionality (Important for ASG!)
+* Can also be run with chef-client -o for continuous acceptance/integration tests for live nodes
+
+#### operations::default
 * Include this on any node for all of the pre-reqs for log and metrics shipping
-* Just set: ```"rsyslog" => { "server_ip" => "syslog.internal.operations.com", "port" => "5544" }```
+* Just set: ```"rsyslog" : { "server_ip" : "syslog.internal.operations.com", "port" : "5544" }```
 
 #### operations::infrastructure
 * Some attributes *must* be overriden, not defaulted. Check the role json, we use this because of setting and over-riding attributes across a large number of cookbooks.
@@ -132,306 +137,12 @@ Notes for Scale
 ------------
 * If you are running redis 2.4.x increase the ulimit or upgrade to 2.6.x, running out of file descriptors will cause 100% CPU and a non-responsive redis [reference](http://code.google.com/p/redis/issues/detail?id=648)
 * node.js statsD is the highest CPU User, consider running a C version
-
-
-Attributes
-----------
-#### operations::default
-<table>
-  <tr>
-    <th>Key</th>
-    <th>Type</th>
-    <th>Description</th>
-    <th>Default</th>
-  </tr>
-  <tr>
-    <td><tt>['operations']['user']</tt></td>
-    <td>String</td>
-    <td>system account</td>
-    <td><tt>operations</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['operations']['ssh_keys']</tt></td>
-    <td>String Set [Array]</td>
-    <td>public ssh keys for system account's autorized_keys</td>
-    <td><tt>["","",""]</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['rsyslog']['server_ip']</tt></td>
-    <td>String</td>
-    <td>syslog server for rsyslog forwarding</td>
-    <td><tt>syslog.internal.operations.com</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['rsyslog']['port']</tt></td>
-    <td>Integer</td>
-    <td>syslog port for rsyslog forwarding</td>
-    <td><tt>5544</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['logstash']['server']['base_config_cookbook']</tt></td>
-    <td>String</td>
-    <td>cookbook with logstash server config template</td>
-    <td><tt>operations</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['logstash']['server']['install_rabbitmq']</tt></td>
-    <td>Boolean</td>
-    <td>to install rabbitmq or not</td>
-    <td><tt>false</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['logstash']['server']['xmx']</tt></td>
-    <td>String</td>
-    <td>java max ram</td>
-    <td><tt>512M</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['logstash']['server']['xms']</tt></td>
-    <td>String</td>
-    <td>java min ram</td>
-    <td><tt>512M</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['statsd']['delete_idle_stats']</tt></td>
-    <td>Boolean</td>
-    <td>delete idle stats</td>
-    <td><tt>true</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['statsd']['delete_timers']</tt></td>
-    <td>Boolean</td>
-    <td>delete idle timers</td>
-    <td><tt>true</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['statsd']['delete_gauges']</tt></td>
-    <td>Boolean</td>
-    <td>delete idle gauges</td>
-    <td><tt>true</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['statsd']['delete_sets']</tt></td>
-    <td>Boolean</td>
-    <td>delete idle sets</td>
-    <td><tt>true</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['statsd']['delete_counters']</tt></td>
-    <td>Boolean</td>
-    <td>delete idle counters</td>
-    <td><tt>true</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['statsd']['flush_interval']</tt></td>
-    <td>Integer</td>
-    <td>flush interval in ms - set this the same as diamond! (1 minute here)</td>
-    <td><tt>60000</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['authorization']['sudo']['passwordless']</tt></td>
-    <td>Boolean</td>
-    <td>allow passwordless sudo</td>
-    <td><tt>true</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['authorization']['sudo']['users']</tt></td>
-    <td>String Set [Array]</td>
-    <td>list of users to allow sudo access</td>
-    <td><tt>["ec2-user", "operations"]</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['postfix']['main']['smtpd_use_tls']</tt></td>
-    <td>Boolean</td>
-    <td>use tls when connecting out</td>
-    <td><tt>false</tt></td>
-  </tr>  
-  <tr>
-    <td><tt>['tattle']['listen_port']</tt></td>
-    <td>Integer</td>
-    <td>port for tattle webapp</td>
-    <td><tt>8082</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['tattle']['url']</tt></td>
-    <td>String</td>
-    <td>url for alert emails to link back</td>
-    <td><tt>tattle.internal.operations.com</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['tattle']['admin_email']</tt></td>
-    <td>String</td>
-    <td>email alerts are from</td>
-    <td><tt>ops@operations.com</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['tattle']['doc_root']</tt></td>
-    <td>String</td>
-    <td>docroot for tattle webapp</td>
-    <td><tt>/opt/tattle</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['chatbot']['rooms']</tt></td>
-    <td>String Set [Array]</td>
-    <td>list of hipchat rooms to join</td>
-    <td><tt>["alpha", "names"]</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['chatbot']['username']</tt></td>
-    <td>String</td>
-    <td>hipchat account username</td>
-    <td><tt>realname</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['chatbot']['password']</tt></td>
-    <td>String</td>
-    <td>hipchat password</td>
-    <td><tt>xx</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['chatbot']['nickname']</tt></td>
-    <td>String</td>
-    <td>nickname for bot</td>
-    <td><tt>eggdrop</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['chatbot']['api_key']</tt></td>
-    <td>String</td>
-    <td>v2 api key</td>
-    <td><tt>md5</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['nginx']['default_domain']</tt></td>
-    <td>String</td>
-    <td>default vhost listener</td>
-    <td><tt>localhost</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['nginx']['default_site_enabled']</tt></td>
-    <td>Boolean</td>
-    <td>allow default docroot</td>
-    <td><tt>false</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['nginx']['sites']['proxy']</tt></td>
-    <td>String Set [Array of {Object}]</td>
-    <td>snazzy nginx proxy metadata</td>
-    <td><tt>[
-				{ "domain":"graphite.internal.operations.com", "directory":"/opt/graphite/webapp/content/", "proxy_location" : "http://localhost:8080" },
-				{ "domain":"anthracite.internal.operations.com", "directory":"/opt/anthracite/", "proxy_location" : "http://localhost:8081" },
-				{ "domain":"tattle.internal.operations.com", "directory":"/opt/tattle/", "proxy_location" : "http://localhost:8082" },
-				{ "domain":"skyline.internal.operations.com", "directory":"/opt/skyline/", "proxy_location" : "http://localhost:1500" },
-			 	{ "domain":"jenkins.internal.operations.com", "directory":"/opt/jenkins/", "proxy_location" : "http://localhost:8089" }
-			]
-	</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['nginx']['default_site_enabled']</tt></td>
-    <td>Boolean</td>
-    <td>allow default docroot</td>
-    <td><tt>false</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['apache']['listen_ports']</tt></td>
-    <td>Integer [Array]</td>
-    <td>ports that apache can vhost listen on</td>
-    <td><tt>8080</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['graphite']['listen_port']</tt></td>
-    <td>Integer</td>
-    <td>graphite vhost listener</td>
-    <td><tt>8080</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['graphite']['graphite_web']['bitmap_support']</tt></td>
-    <td>Boolean</td>
-    <td>compile fancy bitmap support</td>
-    <td><tt>false</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['kibana']['webserver_hostname']</tt></td>
-    <td>String</td>
-    <td>hostname for kibana</td>
-    <td><tt>kibana.internal.operations.com</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['kibana']['webserver_listen']</tt></td>
-    <td>String</td>
-    <td>ip to bind to</td>
-    <td><tt>*</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['elasticsearch']['allocated_memory']</tt></td>
-    <td>String</td>
-    <td>ram for elasticsearch</td>
-    <td><tt>2048m</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['elasticsearch']['version']</tt></td>
-    <td>String</td>
-    <td>version to install</td>
-    <td><tt>0.90.11</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['elasticsearch']['path']['data']</tt></td>
-    <td>String</td>
-    <td>path to data store</td>
-    <td><tt>/opt/elasticsearch/data</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['elasticsearch']['path']['work']</tt></td>
-    <td>String</td>
-    <td>path to work store</td>
-    <td><tt>/opt/elasticsearch/work</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['elasticsearch']['path']['logs']</tt></td>
-    <td>String</td>
-    <td>path to logs</td>
-    <td><tt>/var/log/elasticsearch</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['mysql']['server_debian_password']</tt></td>
-    <td>String</td>
-    <td>another password for mysql</td>
-    <td><tt>xx</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['mysql']['server_repl_password']</tt></td>
-    <td>String</td>
-    <td>root password for mysql</td>
-    <td><tt>xx</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['mysql']['server_root_password']</tt></td>
-    <td>String</td>
-    <td>another password for mysql</td>
-    <td><tt>xx</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['jenkins']['server']['port']</tt></td>
-    <td>Integer</td>
-    <td>port jenkins lives on</td>
-    <td><tt>8089</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['jenkins']['server']['home']</tt></td>
-    <td>String</td>
-    <td>data dir</td>
-    <td><tt>/opt/jenkins</tt></td>
-  </tr>
-  <tr>
-    <td><tt>['jenkins']['server']['url']</tt></td>
-    <td>String</td>
-    <td>url for jenkins</td>
-    <td><tt>http://jenkins.internal.operations.com</tt></td>
-  </tr>
-</table>
+* If using AWS, just go ahead and use PIOPs on a single mountpoint to start, you can always adjust the throughput, but you will hit a ceiling of <500,000.00 log lines and <100,000.00 time series metrics per minute at the standard ~100IOPS for EBS 
+* If using Public Cloud Services like S3, SQS, DDB, etc... enable EIPs for *ALL* ASGs otherwise you will saturate your NAT. (ELB, RDS, ElastiCache are all intra-VPC and OK)
+* Removed Skyline from the project, it just needs to run on its own machine
 
 Contributing
 ------------
-
 1. Fork the repository on Github
 2. Create a named feature branch (like `add_component_x`)
 3. Write your change
