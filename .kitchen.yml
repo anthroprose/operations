@@ -12,7 +12,7 @@ platforms:
   - name: centos-6.4
     driver_config:
       customize:
-        memory: 4096
+        memory: 8192
 
 suites:
   - name: default

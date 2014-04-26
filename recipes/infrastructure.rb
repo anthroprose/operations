@@ -69,47 +69,6 @@ service "mongod" do
   action [ :enable, :start ]
 end
 
-git '/opt/skyline' do
-  repository "https://github.com/etsy/skyline.git"
-  reference "master"
-  action :sync
-end
-
-script "install-skyline-prereqs" do
-  not_if { File.exists?("/var/log/skyline") }
-  interpreter "bash"
-  user "root"
-  group "root"
-  cwd "/tmp"
-  code <<-EOH
-  cd /opt/skyline
-  pip install -r requirements.txt
-  mkdir -p /var/log/skyline
-  mkdir -p /var/run/skyline
-  mkdir -p /var/log/redis
-  mkdir -p /var/dump/
-  EOH
-end
-
-template "/opt/skyline/src/settings.py" do
-  source "skyline-settings.py.erb"
-  owner "root"
-  group "root"
-  variables()
-end
-  
-script "run-skyline" do
-  interpreter "bash"
-  user "root"
-  group "root"
-  code <<-EOH
-  cd /opt/skyline/bin
-  #./horizon.d start
-  #./analyzer.d start
-  #./webapp.d start
-  EOH
-end
-
 git '/opt/seyren' do
   repository "https://github.com/scobal/seyren.git"
   reference "master"

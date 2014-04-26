@@ -1,7 +1,7 @@
 continuous operations
 ==========
 
-[![Travis-CI Build Status](https://api.travis-ci.org/Jumpshot/operations.png)](https://travis-ci.org/Jumpshot/operations) [![Dependency Status](https://gemnasium.com/Jumpshot/operations.png)](https://gemnasium.com/Jumpshot/operations)
+[![Travis-CI Build Status](https://api.travis-ci.org/Jumpshot/operations.png)](https://travis-ci.org/Jumpshot/operations) [![Dependency Status](https://gemnasium.com/Jumpshot/operations.png)](https://gemnasium.com/Jumpshot/operations) [![Gitter chat](https://badges.gitter.im/Jumpshot/operations.png)](https://gitter.im/Jumpshot/operations)
 
 ## v1.0.0
 

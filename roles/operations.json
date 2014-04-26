@@ -4,8 +4,8 @@
 	"instance_role": "operations",
 	"json_class": "Chef::Role",
 	"run_list": [
-		"recipe[yum]",
 		"recipe[yum-epel]",
+		"recipe[yum]",
 		"recipe[user]",
 		"recipe[cron]",
 		"recipe[rsyslog::client]",
