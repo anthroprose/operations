@@ -12,9 +12,9 @@ platforms:
   - name: centos-6.4
     driver_config:
       customize:
-        memory: 8192
+        memory: 4096
 
 suites:
   - name: default
     run_list: role[operations]
-    attributes:
+    attributes: { "elasticsearch" : { "allocated_memory" : "1024m" }, "redisio" : { "default_settings" : { "maxmemory" : "128m" } } }

@@ -20,20 +20,9 @@ default['operations']['infrastructure']['packages'] = %w{
   fuse
   rubygems
   ruby-devel
-  lapack
-  lapack-devel
-  blas
-  blas-devel
 }
 
 default['operations']['infrastructure']['pip_packages'] = %w{
-  numpy
-  scipy
-  scikits.statsmodels
-  pandas
-  patsy
-  statsmodels
-  msgpack_python
 }
 
 default['mysql']['server']['packages'] = ['mysql-server']

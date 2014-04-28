@@ -1,4 +1,5 @@
 # You can run this Recipe on any of your nodes to add in a system account with all your ops guys public ssh keys and get logs & metrics flowing off box.
+
 node['operations']['packages'].each do |p|
   package p
 end

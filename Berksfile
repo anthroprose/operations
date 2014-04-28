@@ -1,4 +1,4 @@
-site :opscode
+source "http://api.berkshelf.com"
 
 cookbook 'chatbot', git: 'git@github.com:Jumpshot/chef-chatbot.git'
 cookbook 'statsd', git: 'git@github.com:hectcastro/chef-statsd.git', branch: "master"

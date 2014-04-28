@@ -8,6 +8,11 @@ require 'chefspec/berkshelf'
   version:    '12.04',
   log_level:  ::LOG_LEVEL
 }
+::CENTOS_OPTS = {
+  platform:   'centos',
+  version:    '6.4',
+  log_level:  ::LOG_LEVEL
+}
 ::CHEFSPEC_OPTS = {
   log_level:  ::LOG_LEVEL
 }

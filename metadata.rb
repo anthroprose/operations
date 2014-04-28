@@ -14,6 +14,8 @@ recipe           'operations::infrastructure', 'Installs/Configures the Log Aggr
   supports os
 end
 
-%w{ user yum-epel yum cron rsyslog git python graphite sudo redisio java maven postfix mysql statsd elasticsearch nginx kibana jenkins logstash chef_handler chatbot }.each do |cb|
+depends "nginx", "= 2.2.0" 
+
+%w{ user yum-epel yum cron rsyslog git python graphite sudo redisio java maven postfix mysql statsd elasticsearch kibana jenkins logstash chef_handler chatbot }.each do |cb|
   depends cb
 end

@@ -46,7 +46,7 @@
             "webserver_listen" : "*"
         },
         "elasticsearch" : {
-            "allocated_memory" : "8192m",
+            "allocated_memory" : "1024m",
             "version" : "1.1.0",
             "path" : {
             	"data" : "/opt/elasticsearch/data",
