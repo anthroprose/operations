@@ -197,7 +197,8 @@
                                 "route53:*",
                                 "ec2:CreateVolume",
                                 "ec2:AttachVolume",
-                                "cloudwatch:PutMetricData"
+                                "cloudwatch:PutMetricData",
+                                "autoscaling:DescribeAutoScalingGroups"
                             ],
                             "Resource": "*"
                         },
@@ -299,7 +300,9 @@
                                     "Fn::Join": [
                                         "",
                                         [
-                                            "{\"run_list\":[\"role[operations]\"]}"
+                                            "{\"run_list\":[\"role[operations]\"],\"jumpshot\":{\"operations\":{\"tag\":\"",
+                                            { "Ref" : "OpsVolumeTag" },
+                                            "\"}}}"
                                         ]
                                     ]
                                 }

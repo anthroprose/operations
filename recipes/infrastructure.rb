@@ -37,7 +37,7 @@ end
 cron_d 'snapshot-backup' do
   minute  0
   hour    "*"
-  command 'python /usr/bin/snapshot-create Name operations 72 /opt sdh1 "/usr/sbin/xfs_freeze -f" "/usr/sbin/xfs_freeze -u"'
+  command 'python /usr/bin/snapshot-create Name #{node["jumpshot"]["operations"]["tag"]} 72 /opt sdh1 "/usr/sbin/xfs_freeze -f" "/usr/sbin/xfs_freeze -u"'
   user    'root'
 end
 
