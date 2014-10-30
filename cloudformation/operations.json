@@ -1,35 +1,28 @@
 {
     "AWSTemplateFormatVersion" : "2010-09-09",
-
     "Description" : "Operations",
-
     "Parameters" : {
-    
         "ArtifactBucket" : {
             "Type" : "String",
             "Description" : "S3 Bucket for Artifacts"
         },
-    
         "MessageTopic" : {
             "Type" : "String",
             "Description" : "Queue Topic ARN for Message Bus"
         },
-        
         "DomainSuffix" : {
             "Type" : "String",
             "Description" : "Domain Suffix: domain.com or dev.domain.com"
         },
-    
         "VPCID" : {
             "Type" : "String",
             "Description" : "VPC-ID"
         },
-        
         "ZONEID" : {
+            "Default" : "staging.jumpshot.com",
             "Type" : "String",
             "Description" : "Route53 ZoneID"
         },
-    
         "OpsInstanceSize" : {
             "Default": "m3.xlarge",
             "Type": "String",
@@ -59,50 +52,44 @@
             ],
             "ConstraintDescription": "must select a valid instance type."
         },
-        
         "PrivateSubnets": {
             "Default": "",
             "Type": "CommaDelimitedList",
             "Description": "Subnets"
         },
-        
         "PrivateAZs": {
             "Default": "",
             "Type": "CommaDelimitedList",
             "Description": "List of Private Subnet AZs"
         },
-        
         "OpsVolumeSize" : {
-            "Default" : "500",
+            "Default" : "1024",
             "Type" : "String",
             "Description" : "Volume size in GB"
         },
-        
+        "OpsVolumeTag" : {
+            "Default" : "operations",
+            "Type" : "String",
+            "Description" : "Ops Volume Tag"
+        },
         "ChefClientVersion": {
             "Type": "String",
             "Description": "11.10.4"
         }
-                
     },
-
     "Mappings" : {
-
         "AWSRegionAvailabilityZones" : {
           "us-east-1"      : { "1" : "us-east-1a", "2" : "us-east-1d", "3" : "us-east-1c" },
           "us-west-1"      : { "1" : "us-west-1a", "2" : "us-west-1b", "3" : "us-west-1c" },
           "us-west-2"      : { "1" : "us-west-2a", "2" : "us-west-2b", "3" : "us-west-2c" }
         },
-        
         "AWSRegionArch2AMI" : {
-          "us-east-1"      : { "64" : "ami-83e4bcea" },
-          "us-west-1"      : { "64" : "ami-981f29dd" },
-          "us-west-2"      : { "64" : "ami-be1c848e" }
+          "us-east-1"      : { "64" : "ami-51736438" },
+          "us-west-1"      : { "64" : "ami-60f69f50" },
+          "us-west-2"      : { "64" : "ami-e6f1cfa3" }
         }
-              
     },
-    
     "Resources" : {
-        
         "OpsSecurityGroup" : {
             "Type" : "AWS::EC2::SecurityGroup",
             "Properties" : {
@@ -123,7 +110,6 @@
                 ]
             }
         },
-        
         "OpsASGServerGroup" : {
             "UpdatePolicy" : {
               "AutoScalingRollingUpdate" : {
@@ -150,7 +136,6 @@
                 }]
             }
         },
-
         "OpsAlarmStatusCheckFailed": {
             "Type": "AWS::CloudWatch::Alarm",
             "Properties": {
@@ -195,7 +180,8 @@
                                 "route53:*",
                                 "ec2:CreateVolume",
                                 "ec2:AttachVolume",
-                                "cloudwatch:PutMetricData"
+                                "cloudwatch:PutMetricData",
+                                "autoscaling:DescribeAutoScalingGroups"
                             ],
                             "Resource": "*"
                         },
@@ -215,7 +201,6 @@
             }
             
         },
-
        "OpsRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
@@ -239,57 +224,57 @@
         "OpsLaunchConfig" : {
             "Type" : "AWS::AutoScaling::LaunchConfiguration",
             "Metadata" : {
-            	"AWS::CloudFormation::Authentication":{
-					"S3AccessCreds":{
-						"type":"S3",
-						"roleName":{
-							"Ref":"OpsRole"
-						}
-					}
-				},
+                "AWS::CloudFormation::Authentication":{
+                    "S3AccessCreds":{
+                        "type":"S3",
+                        "roleName":{
+                            "Ref":"OpsRole"
+                        }
+                    }
+                },
                 "AWS::CloudFormation::Init" : {
                     "config" : {
                         "files" : {
-	                        "/etc/chef/chef-validator.pem" : {
-	                           "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/chef-validator.pem"]]},
-	                           "mode" : "000644",
-	                           "owner" : "root",
-	                           "group" : "root",
-	                           "authentication" : "S3AccessCreds"
-	                        },
-	                        "/etc/chef/client.rb" : {
-	                           "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/client.rb"]]},
-	                           "mode" : "000644",
-	                           "owner" : "root",
-	                           "group" : "root",
-	                           "authentication" : "S3AccessCreds"
-	                        },
-	                        "/etc/chef/.secret" : {
-	                           "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/encrypted_data_bag_secret"]]},
-	                           "mode" : "000600",
-	                           "owner" : "root",
-	                           "group" : "root",
-	                           "authentication" : "S3AccessCreds"
-	                        },
-	                        "/usr/bin/route53-entry" : {
-	                           "source" : "https://raw.github.com/Jumpshot/aws-minions/master/route53-entry.py",
-	                           "mode" : "000777",
-	                           "owner" : "root",
-	                           "group" : "root"
-	                        },
-	                        "/usr/bin/snapshot-restore" : {
-	                           "source" : "https://raw.github.com/Jumpshot/aws-minions/master/snapshot-restore.py",
-	                           "mode" : "000777",
-	                           "owner" : "root",
-	                           "group" : "root"
-	                        },
-	                        "/usr/bin/snapshot-create" : {
-	                           "source" : "https://raw.github.com/Jumpshot/aws-minions/master/snapshot-create.py",
-	                           "mode" : "000777",
-	                           "owner" : "root",
-	                           "group" : "root"
-	                        },
-	                        "/etc/chef/init.json": {
+                            "/etc/chef/chef-validator.pem" : {
+                               "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/chef-validator.pem"]]},
+                               "mode" : "000644",
+                               "owner" : "root",
+                               "group" : "root",
+                               "authentication" : "S3AccessCreds"
+                            },
+                            "/etc/chef/client.rb" : {
+                               "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/client.rb"]]},
+                               "mode" : "000644",
+                               "owner" : "root",
+                               "group" : "root",
+                               "authentication" : "S3AccessCreds"
+                            },
+                            "/etc/chef/.secret" : {
+                               "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/encrypted_data_bag_secret"]]},
+                               "mode" : "000600",
+                               "owner" : "root",
+                               "group" : "root",
+                               "authentication" : "S3AccessCreds"
+                            },
+                            "/usr/bin/route53-entry" : {
+                               "source" : "https://raw.github.com/Jumpshot/aws-minions/master/route53-entry.py",
+                               "mode" : "000777",
+                               "owner" : "root",
+                               "group" : "root"
+                            },
+                            "/usr/bin/snapshot-restore" : {
+                               "source" : "https://raw.github.com/Jumpshot/aws-minions/master/snapshot-restore.py",
+                               "mode" : "000777",
+                               "owner" : "root",
+                               "group" : "root"
+                            },
+                            "/usr/bin/snapshot-create" : {
+                               "source" : "https://raw.github.com/Jumpshot/aws-minions/master/snapshot-create.py",
+                               "mode" : "000777",
+                               "owner" : "root",
+                               "group" : "root"
+                            },
+                            "/etc/chef/init.json": {
                                 "mode": "000600",
                                 "owner": "root",
                                 "group": "root",
@@ -297,7 +282,9 @@
                                     "Fn::Join": [
                                         "",
                                         [
-                                            "{\"run_list\":[\"role[operations]\"]}"
+                                            "{\"run_list\":[\"role[operations]\"],\"jumpshot\":{\"operations\":{\"tag\":\"",
+                                            { "Ref" : "OpsVolumeTag" },
+                                            "\"}}}"
                                         ]
                                     ]
                                 }
@@ -308,6 +295,7 @@
             },
             "Properties" : {
                 "KeyName" : "infrastructure",
+                "EbsOptimized" : true,
                 "IamInstanceProfile" : {"Fn::GetAtt" : ["OpsProfile", "Arn"] },
                 "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" }, "64" ]},
                 "SecurityGroups" : [ { "Ref" : "OpsSecurityGroup" } ],
@@ -315,30 +303,24 @@
                 "InstanceMonitoring" : "false",
                 "UserData": {
                     "Fn::Base64" : { "Fn::Join" : ["", [
-                            "#!/bin/bash\n",                         
+                            "#!/bin/bash\n",
                             "rm -f /etc/update-motd.d/70-available-updates\n",
                             "yum-config-manager --enable epel\n",
                             "yum install -y git xfsprogs aws-cfn-bootstrap aws-apitools-common aws-apitools-ec2 python-pip\n",
                             "/opt/aws/bin/cfn-init -s ", { "Ref" : "AWS::StackName" }, " -r OpsLaunchConfig --region ", { "Ref" : "AWS::Region" }, "\n",
                             "python /usr/bin/route53-entry ", { "Ref" : "ZONEID" }, " operations.internal.", { "Ref" : "DomainSuffix" }, " 300\n",
-                            "python /usr/bin/snapshot-restore Name operations sdh1 ", { "Ref" : "OpsVolumeSize" }, " \"mkfs.xfs -f /dev/sdh1\"\n",
-                            "echo /dev/sdh1 /opt xfs rw,noatime,nodiratime 0 0 >> /etc/fstab\n",
+                            "python /usr/bin/snapshot-restore Name ", { "Ref" : "OpsVolumeTag" }, " sdh ", { "Ref" : "OpsVolumeSize" }, " \"mkfs.xfs -f /dev/sdh\"\n",
+                            "echo /dev/sdh /opt xfs rw,noatime,nodiratime 0 0 >> /etc/fstab\n",
                             "rm -rf /opt;mkdir /opt;mount /opt\n",
                             "curl -L https://www.opscode.com/chef/install.sh | bash -s -- -v ", { "Ref": "ChefClientVersion" }, "\n",
                             "OPSCODE_USER=`hostname` chef-client -o 'role[operations]' >> /var/log/chef-client.log\n",
-                            "python /usr/bin/snapshot-create Name operations 72 /opt sdh1 \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
+                            "python /usr/bin/snapshot-create Name ", { "Ref" : "OpsVolumeTag" }, " 72 /opt sdh \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
                           ]]
                     }
                 }
             }
         }
-        
     },
-
     "Outputs" : {
-    
-        
-
     }
-    
 }
