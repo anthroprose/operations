@@ -23,6 +23,11 @@
             "Type" : "String",
             "Description" : "Route53 ZoneID"
         },
+        "AmiId" : {
+            "Default" : "ami-d80796b0",
+            "Type" : "String",
+            "Description" : "AMI ID To use.  Had been using: ami-51736438 (us-east-1), ami-60f69f50 (us-west-1), ami-e6f1cfa3 (us-west-2)"
+        },
         "OpsInstanceSize" : {
             "Default": "m3.xlarge",
             "Type": "String",
@@ -52,15 +57,15 @@
             ],
             "ConstraintDescription": "must select a valid instance type."
         },
-        "PrivateSubnets": {
+        "PublicSubnets": {
             "Default": "",
             "Type": "CommaDelimitedList",
             "Description": "Subnets"
         },
-        "PrivateAZs": {
+        "PublicAZs": {
             "Default": "",
             "Type": "CommaDelimitedList",
-            "Description": "List of Private Subnet AZs"
+            "Description": "List of Public Subnet AZs"
         },
         "OpsVolumeSize" : {
             "Default" : "1024",
@@ -82,11 +87,6 @@
           "us-east-1"      : { "1" : "us-east-1a", "2" : "us-east-1d", "3" : "us-east-1c" },
           "us-west-1"      : { "1" : "us-west-1a", "2" : "us-west-1b", "3" : "us-west-1c" },
           "us-west-2"      : { "1" : "us-west-2a", "2" : "us-west-2b", "3" : "us-west-2c" }
-        },
-        "AWSRegionArch2AMI" : {
-          "us-east-1"      : { "64" : "ami-51736438" },
-          "us-west-1"      : { "64" : "ami-60f69f50" },
-          "us-west-2"      : { "64" : "ami-e6f1cfa3" }
         }
     },
     "Resources" : {
@@ -96,17 +96,14 @@
                 "VpcId" : { "Ref" : "VPCID" },
                 "GroupDescription" : "Operations Security Group",
                 "SecurityGroupIngress" : [ 
-                    { "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "10.0.0.0/16" },
-                    { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "10.0.0.0/16" },
-                    { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "10.10.0.0/24" },
-                    { "IpProtocol" : "tcp", "FromPort" : "5544", "ToPort" : "5544", "CidrIp" : "10.0.0.0/16" },
-                    { "IpProtocol" : "udp", "FromPort" : "8125", "ToPort" : "8125", "CidrIp" : "10.0.0.0/16" },
-                    { "IpProtocol" : "tcp", "FromPort" : "9200", "ToPort" : "9200", "CidrIp" : "10.0.0.0/16" },
-                    { "IpProtocol" : "tcp", "FromPort" : "9200", "ToPort" : "9200", "CidrIp" : "10.10.0.0/24" },
-                    { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "10.0.0.0/16" },
-                    { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "10.10.0.0/24" },
-                    { "IpProtocol" : "tcp", "FromPort" : "6379", "ToPort" : "6379", "CidrIp" : "10.0.0.0/16" },
-                    { "IpProtocol" : "udp", "FromPort" : "9999", "ToPort" : "9999", "CidrIp" : "10.0.0.0/16" }
+                    { "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "10.0.0.0/8" },
+                    { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "10.0.0.0/8" },
+                    { "IpProtocol" : "tcp", "FromPort" : "5544", "ToPort" : "5544", "CidrIp" : "10.0.0.0/8" },
+                    { "IpProtocol" : "udp", "FromPort" : "8125", "ToPort" : "8125", "CidrIp" : "10.0.0.0/8" },
+                    { "IpProtocol" : "tcp", "FromPort" : "9200", "ToPort" : "9200", "CidrIp" : "10.0.0.0/8" },
+                    { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "10.0.0.0/8" },
+                    { "IpProtocol" : "tcp", "FromPort" : "6379", "ToPort" : "6379", "CidrIp" : "10.0.0.0/8" },
+                    { "IpProtocol" : "udp", "FromPort" : "9999", "ToPort" : "9999", "CidrIp" : "10.0.0.0/8" }
                 ]
             }
         },
@@ -119,8 +116,8 @@
             },
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
-                "AvailabilityZones" : { "Ref" : "PrivateAZs" },
-                "VPCZoneIdentifier" : { "Ref" : "PrivateSubnets" },
+                "AvailabilityZones" : { "Ref" : "PublicAZs" },
+                "VPCZoneIdentifier" : { "Ref" : "PublicSubnets" },
                 "LaunchConfigurationName" : { "Ref" : "OpsLaunchConfig" },
                 "MinSize" : "1",
                 "MaxSize" : "2",
@@ -297,7 +294,7 @@
                 "KeyName" : "infrastructure",
                 "EbsOptimized" : true,
                 "IamInstanceProfile" : {"Fn::GetAtt" : ["OpsProfile", "Arn"] },
-                "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" }, "64" ]},
+                "ImageId" : { "Ref" : "AmiId" },
                 "SecurityGroups" : [ { "Ref" : "OpsSecurityGroup" } ],
                 "InstanceType" : { "Ref" : "OpsInstanceSize" },
                 "InstanceMonitoring" : "false",
