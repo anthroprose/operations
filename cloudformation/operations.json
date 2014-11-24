@@ -1,323 +1,336 @@
 {
-    "AWSTemplateFormatVersion" : "2010-09-09",
-    "Description" : "Operations",
-    "Parameters" : {
-        "ArtifactBucket" : {
-            "Type" : "String",
-            "Description" : "S3 Bucket for Artifacts"
-        },
-        "MessageTopic" : {
-            "Type" : "String",
-            "Description" : "Queue Topic ARN for Message Bus"
-        },
-        "DomainSuffix" : {
-            "Type" : "String",
-            "Description" : "Domain Suffix: domain.com or dev.domain.com"
-        },
-        "VPCID" : {
-            "Type" : "String",
-            "Description" : "VPC-ID"
-        },
-        "ZONEID" : {
-            "Default" : "staging.jumpshot.com",
-            "Type" : "String",
-            "Description" : "Route53 ZoneID"
-        },
-        "AmiId" : {
-            "Default" : "ami-d80796b0",
-            "Type" : "String",
-            "Description" : "AMI ID To use.  Had been using: ami-51736438 (us-east-1), ami-60f69f50 (us-west-1), ami-e6f1cfa3 (us-west-2)"
-        },
-        "OpsInstanceSize" : {
-            "Default": "m3.xlarge",
-            "Type": "String",
-            "Description": "Instance Class",
-            "AllowedValues": [
-                "t1.micro",
-                "m1.small",
-                "m1.medium",
-                "m1.large",
-                "m1.xlarge",
-                "m3.medium",
-                "m3.large",
-                "m3.xlarge",
-                "m3.2xlarge",
-                "c1.medium",
-                "c1.xlarge",
-                "c3.large",
-                "c3.xlarge",
-                "c3.2xlarge",
-                "c3.4xlarge",
-                "c3.8xlarge",
-                "cc2.8xlarge",
-                "m2.xlarge",
-                "m2.2xlarge",
-                "m2.4xlarge",
-                "cr1.8xlarge"
-            ],
-            "ConstraintDescription": "must select a valid instance type."
-        },
-        "PublicSubnets": {
-            "Default": "",
-            "Type": "CommaDelimitedList",
-            "Description": "Subnets"
-        },
-        "PublicAZs": {
-            "Default": "",
-            "Type": "CommaDelimitedList",
-            "Description": "List of Public Subnet AZs"
-        },
-        "OpsVolumeSize" : {
-            "Default" : "1024",
-            "Type" : "String",
-            "Description" : "Volume size in GB"
-        },
-        "OpsVolumeTag" : {
-            "Default" : "operations",
-            "Type" : "String",
-            "Description" : "Ops Volume Tag"
-        },
-        "ChefClientVersion": {
-            "Type": "String",
-            "Description": "11.10.4"
-        }
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Operations",
+  "Parameters": {
+    "ArtifactBucket": {
+      "Type": "String",
+      "Description": "S3 Bucket for Artifacts"
     },
-    "Mappings" : {
-        "AWSRegionAvailabilityZones" : {
-          "us-east-1"      : { "1" : "us-east-1a", "2" : "us-east-1d", "3" : "us-east-1c" },
-          "us-west-1"      : { "1" : "us-west-1a", "2" : "us-west-1b", "3" : "us-west-1c" },
-          "us-west-2"      : { "1" : "us-west-2a", "2" : "us-west-2b", "3" : "us-west-2c" }
-        }
+    "MessageTopic": {
+      "Type": "String",
+      "Description": "Queue Topic ARN for Message Bus"
     },
-    "Resources" : {
-        "OpsSecurityGroup" : {
-            "Type" : "AWS::EC2::SecurityGroup",
-            "Properties" : {
-                "VpcId" : { "Ref" : "VPCID" },
-                "GroupDescription" : "Operations Security Group",
-                "SecurityGroupIngress" : [ 
-                    { "IpProtocol" : "icmp", "FromPort" : "-1", "ToPort" : "-1", "CidrIp" : "10.0.0.0/8" },
-                    { "IpProtocol" : "tcp", "FromPort" : "22", "ToPort" : "22", "CidrIp" : "10.0.0.0/8" },
-                    { "IpProtocol" : "tcp", "FromPort" : "5544", "ToPort" : "5544", "CidrIp" : "10.0.0.0/8" },
-                    { "IpProtocol" : "udp", "FromPort" : "8125", "ToPort" : "8125", "CidrIp" : "10.0.0.0/8" },
-                    { "IpProtocol" : "tcp", "FromPort" : "9200", "ToPort" : "9200", "CidrIp" : "10.0.0.0/8" },
-                    { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "10.0.0.0/8" },
-                    { "IpProtocol" : "tcp", "FromPort" : "6379", "ToPort" : "6379", "CidrIp" : "10.0.0.0/8" },
-                    { "IpProtocol" : "udp", "FromPort" : "9999", "ToPort" : "9999", "CidrIp" : "10.0.0.0/8" }
-                ]
-            }
-        },
-        "OpsASGServerGroup" : {
-            "UpdatePolicy" : {
-              "AutoScalingRollingUpdate" : {
-                 "MinInstancesInService" : "1",
-                 "MaxBatchSize" : "1"
-              }
-            },
-            "Type" : "AWS::AutoScaling::AutoScalingGroup",
-            "Properties" : {
-                "AvailabilityZones" : { "Ref" : "PublicAZs" },
-                "VPCZoneIdentifier" : { "Ref" : "PublicSubnets" },
-                "LaunchConfigurationName" : { "Ref" : "OpsLaunchConfig" },
-                "MinSize" : "1",
-                "MaxSize" : "2",
-                "DesiredCapacity" : "1",
-                "NotificationConfiguration" : {
-                    "TopicARN" : { "Ref" : "MessageTopic" },
-                    "NotificationTypes" : ["autoscaling:EC2_INSTANCE_LAUNCH", "autoscaling:EC2_INSTANCE_LAUNCH_ERROR", "autoscaling:EC2_INSTANCE_TERMINATE", "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"]
-                },
-                "Tags" : [ {
-                    "Key" : "Name",
-                    "Value" : "Operations",
-                    "PropagateAtLaunch" : true
-                }]
-            }
-        },
-        "OpsAlarmStatusCheckFailed": {
-            "Type": "AWS::CloudWatch::Alarm",
-            "Properties": {
-                "AlarmDescription": "Status Check Failed",
-                "MetricName": "StatusCheckFailed",
-                "Namespace": "AWS/EC2",
-                "Statistic": "Maximum",
-                "Period": "300",
-                "EvaluationPeriods": "1",
-                "Threshold": "1",
-                "AlarmActions": [ { "Ref" : "MessageTopic" } ],
-                "Dimensions": [
-                  {
-                    "Name": "AutoScalingGroupName",
-                    "Value": { "Ref": "OpsASGServerGroup" }
-                  }
-                ],
-                "ComparisonOperator": "GreaterThanOrEqualToThreshold"
-            }
-        },
-        
-        "OpsPolicy": {
-            "Type" : "AWS::IAM::Policy",
-            "Properties" : {
-                "Roles": [{"Ref": "OpsRole"}],
-                "PolicyName": "OpsPolicy",
-                "PolicyDocument": { 
-                    "Statement":[
-                        {
-                            "Effect":"Allow",
-                            "Action":"cloudformation:DescribeStackResource",
-                            "Resource":"*"
-                        },
-                        {
-                            "Effect": "Allow",
-                            "Action": [
-                                "ec2:Describe*",
-                                "ec2:CreateSnapshot",
-                                "ec2:CreateTags",
-                                "sqs:SendMessage",
-                                "ec2:DeleteSnapshot",
-                                "route53:*",
-                                "ec2:CreateVolume",
-                                "ec2:AttachVolume",
-                                "cloudwatch:PutMetricData",
-                                "autoscaling:DescribeAutoScalingGroups"
-                            ],
-                            "Resource": "*"
-                        },
-                        {
-                            "Effect": "Allow",
-                            "Action": [
-                                "s3:Get*",
-                                "s3:List*"
-                            ],
-                            "Resource": [
-                                { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ArtifactBucket" }]]},
-                                { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ArtifactBucket" }, "/*" ]]}
-                            ]
-                        }
-                    ]
-                }
-            }
-            
-        },
-       "OpsRole": {
-            "Type": "AWS::IAM::Role",
-            "Properties": {
-                "AssumeRolePolicyDocument": {
-                    "Statement": [{
-                        "Effect": "Allow",
-                        "Principal": {"Service": ["ec2.amazonaws.com"]},
-                        "Action": ["sts:AssumeRole"]
-                    }]},
-                "Path": "/"
-            }
-        },
-        
-        "OpsProfile": {
-            "Type": "AWS::IAM::InstanceProfile",
-            "Properties": {
-                "Path": "/",
-                "Roles": [{ "Ref": "OpsRole" }]}
-        },
-        
-        "OpsLaunchConfig" : {
-            "Type" : "AWS::AutoScaling::LaunchConfiguration",
-            "Metadata" : {
-                "AWS::CloudFormation::Authentication":{
-                    "S3AccessCreds":{
-                        "type":"S3",
-                        "roleName":{
-                            "Ref":"OpsRole"
-                        }
-                    }
-                },
-                "AWS::CloudFormation::Init" : {
-                    "config" : {
-                        "files" : {
-                            "/etc/chef/chef-validator.pem" : {
-                               "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/chef-validator.pem"]]},
-                               "mode" : "000644",
-                               "owner" : "root",
-                               "group" : "root",
-                               "authentication" : "S3AccessCreds"
-                            },
-                            "/etc/chef/client.rb" : {
-                               "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/client.rb"]]},
-                               "mode" : "000644",
-                               "owner" : "root",
-                               "group" : "root",
-                               "authentication" : "S3AccessCreds"
-                            },
-                            "/etc/chef/.secret" : {
-                               "source" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", { "Ref" : "ArtifactBucket" }, "/chef/encrypted_data_bag_secret"]]},
-                               "mode" : "000600",
-                               "owner" : "root",
-                               "group" : "root",
-                               "authentication" : "S3AccessCreds"
-                            },
-                            "/usr/bin/route53-entry" : {
-                               "source" : "https://raw.github.com/Jumpshot/aws-minions/master/route53-entry.py",
-                               "mode" : "000777",
-                               "owner" : "root",
-                               "group" : "root"
-                            },
-                            "/usr/bin/snapshot-restore" : {
-                               "source" : "https://raw.github.com/Jumpshot/aws-minions/master/snapshot-restore.py",
-                               "mode" : "000777",
-                               "owner" : "root",
-                               "group" : "root"
-                            },
-                            "/usr/bin/snapshot-create" : {
-                               "source" : "https://raw.github.com/Jumpshot/aws-minions/master/snapshot-create.py",
-                               "mode" : "000777",
-                               "owner" : "root",
-                               "group" : "root"
-                            },
-                            "/etc/chef/init.json": {
-                                "mode": "000600",
-                                "owner": "root",
-                                "group": "root",
-                                "content": {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "{\"run_list\":[\"role[operations]\"],\"jumpshot\":{\"operations\":{\"tag\":\"",
-                                            { "Ref" : "OpsVolumeTag" },
-                                            "\"}}}"
-                                        ]
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "Properties" : {
-                "KeyName" : "infrastructure",
-                "EbsOptimized" : true,
-                "IamInstanceProfile" : {"Fn::GetAtt" : ["OpsProfile", "Arn"] },
-                "ImageId" : { "Ref" : "AmiId" },
-                "SecurityGroups" : [ { "Ref" : "OpsSecurityGroup" } ],
-                "InstanceType" : { "Ref" : "OpsInstanceSize" },
-                "InstanceMonitoring" : "false",
-                "UserData": {
-                    "Fn::Base64" : { "Fn::Join" : ["", [
-                            "#!/bin/bash\n",
-                            "rm -f /etc/update-motd.d/70-available-updates\n",
-                            "yum-config-manager --enable epel\n",
-                            "yum install -y git xfsprogs aws-cfn-bootstrap aws-apitools-common aws-apitools-ec2 python-pip\n",
-                            "/opt/aws/bin/cfn-init -s ", { "Ref" : "AWS::StackName" }, " -r OpsLaunchConfig --region ", { "Ref" : "AWS::Region" }, "\n",
-                            "python /usr/bin/route53-entry ", { "Ref" : "ZONEID" }, " operations.internal.", { "Ref" : "DomainSuffix" }, " 300\n",
-                            "python /usr/bin/snapshot-restore Name ", { "Ref" : "OpsVolumeTag" }, " sdh ", { "Ref" : "OpsVolumeSize" }, " \"mkfs.xfs -f /dev/sdh\"\n",
-                            "echo /dev/sdh /opt xfs rw,noatime,nodiratime 0 0 >> /etc/fstab\n",
-                            "rm -rf /opt;mkdir /opt;mount /opt\n",
-                            "curl -L https://www.opscode.com/chef/install.sh | bash -s -- -v ", { "Ref": "ChefClientVersion" }, "\n",
-                            "OPSCODE_USER=`hostname` chef-client -o 'role[operations]' >> /var/log/chef-client.log\n",
-                            "python /usr/bin/snapshot-create Name ", { "Ref" : "OpsVolumeTag" }, " 72 /opt sdh \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
-                          ]]
-                    }
-                }
-            }
-        }
+    "DomainSuffix": {
+      "Type": "String",
+      "Description": "Domain Suffix: domain.com or dev.domain.com"
     },
-    "Outputs" : {
+    "VPCID": {
+      "Type": "String",
+      "Description": "VPC-ID"
+    },
+    "ZONEID": {
+      "Default": "staging.jumpshot.com",
+      "Type": "String",
+      "Description": "Route53 ZoneID"
+    },
+    "AmiId": {
+      "Default": "ami-d80796b0",
+      "Type": "String",
+      "Description": "AMI ID To use.  Had been using: ami-51736438 (us-east-1), ami-60f69f50 (us-west-1), ami-e6f1cfa3 (us-west-2)"
+    },
+    "OpsInstanceSize": {
+      "Default": "m3.xlarge",
+      "Type": "String",
+      "Description": "Instance Class",
+      "AllowedValues": [
+        "t1.micro",
+        "m1.small",
+        "m1.medium",
+        "m1.large",
+        "m1.xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "m3.2xlarge",
+        "c1.medium",
+        "c1.xlarge",
+        "c3.large",
+        "c3.xlarge",
+        "c3.2xlarge",
+        "c3.4xlarge",
+        "c3.8xlarge",
+        "cc2.8xlarge",
+        "m2.xlarge",
+        "m2.2xlarge",
+        "m2.4xlarge",
+        "cr1.8xlarge"
+      ],
+      "ConstraintDescription": "must select a valid instance type."
+    },
+    "PublicSubnets": {
+      "Default": "",
+      "Type": "CommaDelimitedList",
+      "Description": "Subnets"
+    },
+    "PublicAZs": {
+      "Default": "",
+      "Type": "CommaDelimitedList",
+      "Description": "List of Public Subnet AZs"
+    },
+    "OpsVolumeSize": {
+      "Default": "1024",
+      "Type": "String",
+      "Description": "Volume size in GB"
+    },
+    "OpsVolumeTag": {
+      "Default": "operations",
+      "Type": "String",
+      "Description": "Ops Volume Tag"
+    },
+    "ChefClientVersion": {
+      "Type": "String",
+      "Description": "11.10.4"
     }
+  },
+  "Mappings": {
+    "AWSRegionAvailabilityZones": {
+      "us-east-1"   : { "1": "us-east-1a", "2": "us-east-1d", "3": "us-east-1c" },
+      "us-west-1"   : { "1": "us-west-1a", "2": "us-west-1b", "3": "us-west-1c" },
+      "us-west-2"   : { "1": "us-west-2a", "2": "us-west-2b", "3": "us-west-2c" }
+    }
+  },
+  "Resources": {
+    "OpsSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": { "Ref": "VPCID" },
+        "GroupDescription": "Operations Security Group",
+        "SecurityGroupIngress": [ 
+          { "IpProtocol": "icmp", "FromPort": "-1", "ToPort": "-1", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "tcp", "FromPort": "22", "ToPort": "22", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "tcp", "FromPort": "5544", "ToPort": "5544", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "udp", "FromPort": "8125", "ToPort": "8125", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "tcp", "FromPort": "9200", "ToPort": "9200", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "tcp", "FromPort": "80", "ToPort": "80", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "tcp", "FromPort": "6379", "ToPort": "6379", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "udp", "FromPort": "9999", "ToPort": "9999", "CidrIp": "10.0.0.0/8" }
+        ]
+      }
+    },
+    "OpsASGServerGroup": {
+      "UpdatePolicy": {
+        "AutoScalingRollingUpdate": {
+         "MinInstancesInService": "1",
+         "MaxBatchSize": "1"
+        }
+      },
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": { "Ref": "PublicAZs" },
+        "VPCZoneIdentifier": { "Ref": "PublicSubnets" },
+        "LaunchConfigurationName": { "Ref": "OpsLaunchConfig" },
+        "MinSize": "1",
+        "MaxSize": "2",
+        "DesiredCapacity": "1",
+        "NotificationConfiguration": {
+          "TopicARN": { "Ref": "MessageTopic" },
+          "NotificationTypes": ["autoscaling:EC2_INSTANCE_LAUNCH", "autoscaling:EC2_INSTANCE_LAUNCH_ERROR", "autoscaling:EC2_INSTANCE_TERMINATE", "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"]
+        },
+        "Tags": [ {
+          "Key": "Name",
+          "Value": "Operations",
+          "PropagateAtLaunch": true
+        }]
+      }
+    },
+    "OpsAlarmStatusCheckFailed": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Status Check Failed",
+        "MetricName": "StatusCheckFailed",
+        "Namespace": "AWS/EC2",
+        "Statistic": "Maximum",
+        "Period": "300",
+        "EvaluationPeriods": "1",
+        "Threshold": "1",
+        "AlarmActions": [ { "Ref": "MessageTopic" } ],
+        "Dimensions": [
+          {
+          "Name": "AutoScalingGroupName",
+          "Value": { "Ref": "OpsASGServerGroup" }
+          }
+        ],
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold"
+      }
+    },
+    
+    "OpsPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "Roles": [{"Ref": "OpsRole"}],
+        "PolicyName": "OpsPolicy",
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": "*",
+              "Action": "cloudformation:DescribeStackResource"
+            },
+            {
+              "Action": [
+                "autoscaling:DescribeAutoScalingGroups",
+                "cloudwatch:PutMetricData",
+                "dynamodb:BatchGetItem",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:DescribeTable",
+                "dynamodb:GetItem",
+                "dynamodb:ListTables",
+                "dynamodb:PutItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:UpdateItem",
+                "dynamodb:UpdateTable",
+                "ec2:Describe*",
+                "ec2:CreateSnapshot",
+                "ec2:CreateTags",
+                "ec2:CreateVolume",
+                "ec2:AttachVolume",
+                "ec2:DeleteSnapshot",
+                "route53:*",
+                "sdb:*",
+                "sqs:*",
+              ],
+              "Resource": "*",
+              "Effect": "Allow"
+            },
+            {
+              "Resource": [
+                "arn:aws:s3:::jumpshot-asynchronous-jobs",
+                "arn:aws:s3:::jumpshot-asynchronous-jobs/*",
+                "arn:aws:s3:::jumpshot-production-artifacts",
+                "arn:aws:s3:::jumpshot-production-artifacts/*"
+              ],
+              "Action": [
+                "s3:Get*",
+                "s3:List*"
+              ],
+              "Effect": "Allow"
+            }
+          ]
+        }
+      }
+    },
+     "OpsRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {"Service": ["ec2.amazonaws.com"]},
+            "Action": ["sts:AssumeRole"]
+          }]},
+        "Path": "/"
+      }
+    },
+    
+    "OpsProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [{ "Ref": "OpsRole" }]}
+    },
+    
+    "OpsLaunchConfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Metadata": {
+        "AWS::CloudFormation::Authentication":{
+          "S3AccessCreds":{
+            "type":"S3",
+            "roleName":{
+              "Ref":"OpsRole"
+            }
+          }
+        },
+        "AWS::CloudFormation::Init": {
+          "config": {
+            "files": {
+              "/etc/chef/chef-validator.pem": {
+                 "source": { "Fn::Join": ["", ["https://s3.amazonaws.com/", { "Ref": "ArtifactBucket" }, "/chef/chef-validator.pem"]]},
+                 "mode": "000644",
+                 "owner": "root",
+                 "group": "root",
+                 "authentication": "S3AccessCreds"
+              },
+              "/etc/chef/client.rb": {
+                 "source": { "Fn::Join": ["", ["https://s3.amazonaws.com/", { "Ref": "ArtifactBucket" }, "/chef/client.rb"]]},
+                 "mode": "000644",
+                 "owner": "root",
+                 "group": "root",
+                 "authentication": "S3AccessCreds"
+              },
+              "/etc/chef/.secret": {
+                 "source": { "Fn::Join": ["", ["https://s3.amazonaws.com/", { "Ref": "ArtifactBucket" }, "/chef/encrypted_data_bag_secret"]]},
+                 "mode": "000600",
+                 "owner": "root",
+                 "group": "root",
+                 "authentication": "S3AccessCreds"
+              },
+              "/usr/bin/route53-entry": {
+                 "source": "https://raw.github.com/Jumpshot/aws-minions/master/route53-entry.py",
+                 "mode": "000777",
+                 "owner": "root",
+                 "group": "root"
+              },
+              "/usr/bin/snapshot-restore": {
+                 "source": "https://raw.github.com/Jumpshot/aws-minions/master/snapshot-restore.py",
+                 "mode": "000777",
+                 "owner": "root",
+                 "group": "root"
+              },
+              "/usr/bin/snapshot-create": {
+                 "source": "https://raw.github.com/Jumpshot/aws-minions/master/snapshot-create.py",
+                 "mode": "000777",
+                 "owner": "root",
+                 "group": "root"
+              },
+              "/etc/chef/init.json": {
+                "mode": "000600",
+                "owner": "root",
+                "group": "root",
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "{\"run_list\":[\"role[operations]\"],\"jumpshot\":{\"operations\":{\"tag\":\"",
+                      { "Ref": "OpsVolumeTag" },
+                      "\"}}}"
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "KeyName": "infrastructure",
+        "EbsOptimized": true,
+        "IamInstanceProfile": {"Fn::GetAtt": ["OpsProfile", "Arn"] },
+        "ImageId": { "Ref": "AmiId" },
+        "SecurityGroups": [ { "Ref": "OpsSecurityGroup" } ],
+        "InstanceType": { "Ref": "OpsInstanceSize" },
+        "InstanceMonitoring": "false",
+        "UserData": {
+          "Fn::Base64": { "Fn::Join": ["", [
+              "#!/bin/bash\n",
+              "rm -f /etc/update-motd.d/70-available-updates\n",
+              "yum-config-manager --enable epel\n",
+              "yum install -y git xfsprogs aws-cfn-bootstrap aws-apitools-common aws-apitools-ec2 python-pip\n",
+              "/opt/aws/bin/cfn-init -s ", { "Ref": "AWS::StackName" }, " -r OpsLaunchConfig --region ", { "Ref": "AWS::Region" }, "\n",
+              "python /usr/bin/route53-entry ", { "Ref": "ZONEID" }, " operations.internal.", { "Ref": "DomainSuffix" }, " 300\n",
+              "python /usr/bin/snapshot-restore Name ", { "Ref": "OpsVolumeTag" }, " sdh ", { "Ref": "OpsVolumeSize" }, " \"mkfs.xfs -f /dev/sdh\"\n",
+              "echo /dev/sdh /opt xfs rw,noatime,nodiratime 0 0 >> /etc/fstab\n",
+              "rm -rf /opt;mkdir /opt;mount /opt\n",
+              "curl -L https://www.opscode.com/chef/install.sh | bash -s -- -v ", { "Ref": "ChefClientVersion" }, "\n",
+              "OPSCODE_USER=`hostname` chef-client -o 'role[operations]' >> /var/log/chef-client.log\n",
+              "python /usr/bin/snapshot-create Name ", { "Ref": "OpsVolumeTag" }, " 72 /opt sdh \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
+              ]]
+          }
+        }
+      }
+    }
+  },
+  "Outputs": {
+  }
 }
