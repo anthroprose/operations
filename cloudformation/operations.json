@@ -29,7 +29,7 @@
       "Description": "AMI ID To use.  Had been using: ami-51736438 (us-east-1), ami-60f69f50 (us-west-1), ami-e6f1cfa3 (us-west-2)"
     },
     "OpsInstanceSize": {
-      "Default": "m3.xlarge",
+      "Default": "m3.2xlarge",
       "Type": "String",
       "Description": "Instance Class",
       "AllowedValues": [
