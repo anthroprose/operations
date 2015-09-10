@@ -10,50 +10,48 @@
       "Type": "String",
       "Description": "Queue Topic ARN for Message Bus"
     },
-    "DomainSuffix": {
-      "Type": "String",
-      "Description": "Domain Suffix: domain.com or dev.domain.com"
-    },
     "VPCID": {
       "Type": "String",
       "Description": "VPC-ID"
     },
-    "ZONEID": {
-      "Default": "staging.jumpshot.com",
-      "Type": "String",
-      "Description": "Route53 ZoneID"
-    },
     "AmiId": {
-      "Default": "ami-d80796b0",
+      "Default": "ami-d7e067bc",
       "Type": "String",
-      "Description": "AMI ID To use.  Had been using: ami-51736438 (us-east-1), ami-60f69f50 (us-west-1), ami-e6f1cfa3 (us-west-2)"
+      "Description": "AMI ID To use.  Had been using: ami-d7e067bc (us-east-1), ami-60f69f50 (us-west-1 OLD), ami-e6f1cfa3 (us-west-2 OLD)"
     },
     "OpsInstanceSize": {
-      "Default": "m3.2xlarge",
+      "Default": "m4.2xlarge",
       "Type": "String",
       "Description": "Instance Class",
       "AllowedValues": [
-        "t1.micro",
-        "m1.small",
-        "m1.medium",
-        "m1.large",
-        "m1.xlarge",
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "t2.large",
         "m3.medium",
         "m3.large",
         "m3.xlarge",
         "m3.2xlarge",
-        "c1.medium",
-        "c1.xlarge",
+        "m4.large",
+        "m4.xlarge",
+        "m4.2xlarge",
+        "m4.4xlarge",
+        "m4.10xlarge",
+        "r3.large",
+        "r3.xlarge",
+        "r3.2xlarge",
+        "r3.4xlarge",
+        "r3.8xlarge",
         "c3.large",
         "c3.xlarge",
         "c3.2xlarge",
         "c3.4xlarge",
         "c3.8xlarge",
-        "cc2.8xlarge",
-        "m2.xlarge",
-        "m2.2xlarge",
-        "m2.4xlarge",
-        "cr1.8xlarge"
+        "c4.large",
+        "c4.xlarge",
+        "c4.2xlarge",
+        "c4.4xlarge",
+        "c4.8xlarge"
       ],
       "ConstraintDescription": "must select a valid instance type."
     },
@@ -98,19 +96,77 @@
         "SecurityGroupIngress": [ 
           { "IpProtocol": "icmp", "FromPort": "-1", "ToPort": "-1", "CidrIp": "10.0.0.0/8" },
           { "IpProtocol": "tcp", "FromPort": "22", "ToPort": "22", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "tcp", "FromPort": "80", "ToPort": "80", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "tcp", "FromPort": "443", "ToPort": "443", "CidrIp": "10.0.0.0/8" },
           { "IpProtocol": "tcp", "FromPort": "5544", "ToPort": "5544", "CidrIp": "10.0.0.0/8" },
           { "IpProtocol": "udp", "FromPort": "8125", "ToPort": "8125", "CidrIp": "10.0.0.0/8" },
           { "IpProtocol": "tcp", "FromPort": "9200", "ToPort": "9200", "CidrIp": "10.0.0.0/8" },
-          { "IpProtocol": "tcp", "FromPort": "80", "ToPort": "80", "CidrIp": "10.0.0.0/8" },
           { "IpProtocol": "tcp", "FromPort": "6379", "ToPort": "6379", "CidrIp": "10.0.0.0/8" },
           { "IpProtocol": "udp", "FromPort": "9999", "ToPort": "9999", "CidrIp": "10.0.0.0/8" }
         ]
       }
     },
+    "OpsELBSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPCID"
+        },
+        "GroupDescription": "Ops ELB Security Group",
+        "SecurityGroupIngress": [
+          { "IpProtocol": "icmp", "FromPort": "-1", "ToPort": "-1", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "tcp", "FromPort": "80", "ToPort": "80", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "tcp", "FromPort": "443", "ToPort": "443", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "tcp", "FromPort": "5544", "ToPort": "5544", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "udp", "FromPort": "8125", "ToPort": "8125", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "tcp", "FromPort": "9200", "ToPort": "9200", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "tcp", "FromPort": "6379", "ToPort": "6379", "CidrIp": "10.0.0.0/8" },
+          { "IpProtocol": "udp", "FromPort": "9999", "ToPort": "9999", "CidrIp": "10.0.0.0/8" }
+        ]
+      }
+    },
+    "OpsELB": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "Subnets": {
+          "Ref": "PublicSubnets"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "OpsELBSecurityGroup"
+          }
+        ],
+        "Scheme": "internal",
+        "Listeners": [
+          { "InstancePort": "80", "LoadBalancerPort": "80", "Protocol": "HTTP" },
+          { "InstancePort": "443", "LoadBalancerPort": "443", "Protocol": "TCP" },
+          { "InstancePort": "5544", "LoadBalancerPort": "5544", "Protocol": "TCP" },
+          { "InstancePort": "8125", "LoadBalancerPort": "8125", "Protocol": "TCP" },
+          { "InstancePort": "9200", "LoadBalancerPort": "9200", "Protocol": "TCP" },
+          { "InstancePort": "6379", "LoadBalancerPort": "6379", "Protocol": "TCP" },
+          { "InstancePort": "9999", "LoadBalancerPort": "9999", "Protocol": "TCP" }
+        ],
+        "HealthCheck": {
+          "Target": {
+            "Fn::Join": [
+              "",
+              [
+                "HTTP:80/heartbeat"
+              ]
+            ]
+          },
+          "HealthyThreshold": "2",
+          "UnhealthyThreshold": "8",
+          "Interval": "30",
+          "Timeout": "10"
+        },
+        "CrossZone": "true"
+      }
+    },
     "OpsASGServerGroup": {
       "UpdatePolicy": {
         "AutoScalingRollingUpdate": {
-         "MinInstancesInService": "1",
+         "MinInstancesInService": "0",
          "MaxBatchSize": "1"
         }
       },
@@ -119,8 +175,9 @@
         "AvailabilityZones": { "Ref": "PublicAZs" },
         "VPCZoneIdentifier": { "Ref": "PublicSubnets" },
         "LaunchConfigurationName": { "Ref": "OpsLaunchConfig" },
+        "LoadBalancerNames": [ { "Ref":"OpsELB" } ],
         "MinSize": "1",
-        "MaxSize": "2",
+        "MaxSize": "1",
         "DesiredCapacity": "1",
         "NotificationConfiguration": {
           "TopicARN": { "Ref": "MessageTopic" },
@@ -153,7 +210,6 @@
         "ComparisonOperator": "GreaterThanOrEqualToThreshold"
       }
     },
-    
     "OpsPolicy": {
       "Type": "AWS::IAM::Policy",
       "Properties": {
@@ -189,7 +245,7 @@
                 "ec2:DeleteSnapshot",
                 "route53:*",
                 "sdb:*",
-                "sqs:*",
+                "sqs:*"
               ],
               "Resource": "*",
               "Effect": "Allow"
@@ -304,27 +360,32 @@
         }
       },
       "Properties": {
-        "KeyName": "infrastructure",
         "EbsOptimized": true,
         "IamInstanceProfile": {"Fn::GetAtt": ["OpsProfile", "Arn"] },
         "ImageId": { "Ref": "AmiId" },
-        "SecurityGroups": [ { "Ref": "OpsSecurityGroup" } ],
-        "InstanceType": { "Ref": "OpsInstanceSize" },
         "InstanceMonitoring": "false",
+        "InstanceType": { "Ref": "OpsInstanceSize" },
+        "KeyName": "infrastructure",
+        "SecurityGroups": [ { "Ref": "OpsSecurityGroup" } ],
         "UserData": {
           "Fn::Base64": { "Fn::Join": ["", [
               "#!/bin/bash\n",
+              "exec > >(tee /var/log/user-data.log)\n",
+              "exec 2>&1\n",
+              "date\n",
+              "yum-config-manager --save --setopt=10gen.skip_if_unavailable=true\n",
               "rm -f /etc/update-motd.d/70-available-updates\n",
               "yum-config-manager --enable epel\n",
               "yum install -y git xfsprogs aws-cfn-bootstrap aws-apitools-common aws-apitools-ec2 python-pip\n",
-              "/opt/aws/bin/cfn-init -s ", { "Ref": "AWS::StackName" }, " -r OpsLaunchConfig --region ", { "Ref": "AWS::Region" }, "\n",
-              "python /usr/bin/route53-entry ", { "Ref": "ZONEID" }, " operations.internal.", { "Ref": "DomainSuffix" }, " 300\n",
+              "sudo pip install --upgrade boto3\n"
+              "#/opt/aws/bin/cfn-init -s ", { "Ref": "AWS::StackName" }, " -r OpsLaunchConfig --region ", { "Ref": "AWS::Region" }, "\n",
               "python /usr/bin/snapshot-restore Name ", { "Ref": "OpsVolumeTag" }, " sdh ", { "Ref": "OpsVolumeSize" }, " \"mkfs.xfs -f /dev/sdh\"\n",
               "echo /dev/sdh /opt xfs rw,noatime,nodiratime 0 0 >> /etc/fstab\n",
-              "rm -rf /opt;mkdir /opt;mount /opt\n",
+              "mv /opt /opt-`date`;mkdir /opt;mount /opt\n",
               "curl -L https://www.opscode.com/chef/install.sh | bash -s -- -v ", { "Ref": "ChefClientVersion" }, "\n",
               "OPSCODE_USER=`hostname` chef-client -o 'role[operations]' >> /var/log/chef-client.log\n",
-              "python /usr/bin/snapshot-create Name ", { "Ref": "OpsVolumeTag" }, " 72 /opt sdh \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n"
+              "#python /usr/bin/snapshot-create Name ", { "Ref": "OpsVolumeTag" }, " 72 /opt sdh \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n",
+              "date\n"
               ]]
           }
         }
