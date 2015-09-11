@@ -151,7 +151,7 @@
             "Fn::Join": [
               "",
               [
-                "HTTP:80/heartbeat"
+                "HTTP:80/nginx_status"
               ]
             ]
           },
@@ -361,6 +361,7 @@
       },
       "Properties": {
         "EbsOptimized": true,
+        "AssociatePublicIpAddress" : true,
         "IamInstanceProfile": {"Fn::GetAtt": ["OpsProfile", "Arn"] },
         "ImageId": { "Ref": "AmiId" },
         "InstanceMonitoring": "false",
@@ -369,7 +370,7 @@
         "SecurityGroups": [ { "Ref": "OpsSecurityGroup" } ],
         "UserData": {
           "Fn::Base64": { "Fn::Join": ["", [
-              "#!/bin/bash\n",
+              "#!/bin/bash -x\n",
               "exec > >(tee /var/log/user-data.log)\n",
               "exec 2>&1\n",
               "date\n",
@@ -377,14 +378,21 @@
               "rm -f /etc/update-motd.d/70-available-updates\n",
               "yum-config-manager --enable epel\n",
               "yum install -y git xfsprogs aws-cfn-bootstrap aws-apitools-common aws-apitools-ec2 python-pip\n",
-              "sudo pip install --upgrade boto3\n"
-              "#/opt/aws/bin/cfn-init -s ", { "Ref": "AWS::StackName" }, " -r OpsLaunchConfig --region ", { "Ref": "AWS::Region" }, "\n",
+              "pip install --upgrade boto3\n",
+              "yum remove -y aws-cfn-bootstrap ; yum install -y aws-cfn-bootstrap # hack to ensure this is in /opt\n",
+              "rm -f /usr/bin/route53-entry /usr/bin/snapshot-restore /usr/bin/snapshot-create \n",
+              "/opt/aws/bin/cfn-init -s ", { "Ref": "AWS::StackName" }, " -r OpsLaunchConfig --region ", { "Ref": "AWS::Region" }, "\n",
               "python /usr/bin/snapshot-restore Name ", { "Ref": "OpsVolumeTag" }, " sdh ", { "Ref": "OpsVolumeSize" }, " \"mkfs.xfs -f /dev/sdh\"\n",
               "echo /dev/sdh /opt xfs rw,noatime,nodiratime 0 0 >> /etc/fstab\n",
-              "mv /opt /opt-`date`;mkdir /opt;mount /opt\n",
+              "mv /opt /opt-`date +%s`;mkdir /opt;mount /opt\n",
+              "yum remove -y aws-cfn-bootstrap ; yum install -y aws-cfn-bootstrap # hack to ensure this is in /opt\n",
               "curl -L https://www.opscode.com/chef/install.sh | bash -s -- -v ", { "Ref": "ChefClientVersion" }, "\n",
               "OPSCODE_USER=`hostname` chef-client -o 'role[operations]' >> /var/log/chef-client.log\n",
-              "#python /usr/bin/snapshot-create Name ", { "Ref": "OpsVolumeTag" }, " 72 /opt sdh \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n",
+              "python /usr/bin/snapshot-create Name ", { "Ref": "OpsVolumeTag" }, " 72 /opt sdh \"/usr/sbin/xfs_freeze -f\" \"/usr/sbin/xfs_freeze -u\"\n",
+              "/etc/init.d/nginx stop; sleep 2; /etc/init.d/nginx start\n",
+              "/etc/init.d/httpd stop; sleep 2; /etc/init.d/httpd start\n",
+              "/etc/init.d/jenkins stop; sleep 2; /etc/init.d/jenkins start\n",
+              "/etc/init.d/collector stop; sleep 2; /etc/init.d/collector start\n",
               "date\n"
               ]]
           }
